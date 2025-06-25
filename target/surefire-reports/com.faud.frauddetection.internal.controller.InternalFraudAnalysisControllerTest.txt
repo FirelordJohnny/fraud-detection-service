@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.faud.frauddetection.internal.controller.InternalFraudAnalysisControllerTest
+-------------------------------------------------------------------------------
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.908 s -- in com.faud.frauddetection.internal.controller.InternalFraudAnalysisControllerTest

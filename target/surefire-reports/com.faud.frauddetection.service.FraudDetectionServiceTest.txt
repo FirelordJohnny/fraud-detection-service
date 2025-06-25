@@ -1,0 +1,20 @@
+-------------------------------------------------------------------------------
+Test set: com.faud.frauddetection.service.FraudDetectionServiceTest
+-------------------------------------------------------------------------------
+Tests run: 3, Failures: 0, Errors: 2, Skipped: 0, Time elapsed: 0.047 s <<< FAILURE! -- in com.faud.frauddetection.service.FraudDetectionServiceTest
+com.faud.frauddetection.service.FraudDetectionServiceTest.testDetectFraud_LargeAmountRuleTriggered -- Time elapsed: 0.004 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "com.faud.frauddetection.service.evaluator.RuleEngine.supports(String)" because "this.ruleEngine" is null
+	at com.faud.frauddetection.service.impl.RuleBasedFraudDetectionService.detectFraud(RuleBasedFraudDetectionService.java:57)
+	at com.faud.frauddetection.service.FraudDetectionServiceTest.testDetectFraud_LargeAmountRuleTriggered(FraudDetectionServiceTest.java:65)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+
+com.faud.frauddetection.service.FraudDetectionServiceTest.testDetectFraud_HighFrequencyRuleTriggered -- Time elapsed: 0.003 s <<< ERROR!
+java.lang.NullPointerException: Cannot invoke "com.faud.frauddetection.service.evaluator.RuleEngine.supports(String)" because "this.ruleEngine" is null
+	at com.faud.frauddetection.service.impl.RuleBasedFraudDetectionService.detectFraud(RuleBasedFraudDetectionService.java:57)
+	at com.faud.frauddetection.service.FraudDetectionServiceTest.testDetectFraud_HighFrequencyRuleTriggered(FraudDetectionServiceTest.java:89)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+

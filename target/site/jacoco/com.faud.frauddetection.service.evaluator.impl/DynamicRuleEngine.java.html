@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DynamicRuleEngine.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fraud-detection</a> &gt; <a href="index.source.html" class="el_package">com.faud.frauddetection.service.evaluator.impl</a> &gt; <span class="el_source">DynamicRuleEngine.java</span></div><h1>DynamicRuleEngine.java</h1><pre class="source lang-java linenums">package com.faud.frauddetection.service.evaluator.impl;
+
+import com.faud.frauddetection.dto.Transaction;
+import com.faud.frauddetection.entity.FraudRule;
+import com.faud.frauddetection.service.evaluator.RuleEngine;
+import com.faud.frauddetection.dto.RuleEvaluationResult;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * Dynamic rule engine implementation
+ * Configuration-based rule evaluation supporting multiple rule types without code changes
+ */
+@Component
+<span class="fc" id="L25">@Slf4j</span>
+public class DynamicRuleEngine implements RuleEngine {
+    
+    private static final long TIME_WINDOW_SECONDS = 3600; // 1 hour
+<span class="fc" id="L29">    private static final Set&lt;String&gt; SUSPICIOUS_IPS = Set.of(</span>
+<span class="fc" id="L30">        &quot;192.168.1.100&quot;, &quot;10.0.0.1&quot;, &quot;172.16.0.1&quot;</span>
+<span class="fc" id="L31">    );</span>
+    
+    private final StringRedisTemplate redisTemplate;
+    
+    @Autowired
+<span class="fc" id="L36">    public DynamicRuleEngine(StringRedisTemplate redisTemplate) {</span>
+<span class="fc" id="L37">        this.redisTemplate = redisTemplate;</span>
+<span class="fc" id="L38">    }</span>
+    
+    @Override
+    public RuleEvaluationResult evaluateRule(FraudRule rule, Transaction transaction) {
+        try {
+<span class="fc" id="L43">            log.debug(&quot;Evaluating rule: {} for transaction: {}&quot;, rule.getRuleName(), transaction.getTransactionId());</span>
+            
+<span class="fc bfc" id="L45" title="All 6 branches covered.">            return switch (rule.getRuleType().toUpperCase()) {</span>
+<span class="fc" id="L46">                case &quot;AMOUNT&quot; -&gt; evaluateAmountRule(rule, transaction);</span>
+<span class="fc" id="L47">                case &quot;FREQUENCY&quot; -&gt; evaluateFrequencyRule(rule, transaction);</span>
+<span class="fc" id="L48">                case &quot;TIME_OF_DAY&quot; -&gt; evaluateTimeRule(rule, transaction);</span>
+<span class="fc" id="L49">                case &quot;IP_BLACKLIST&quot; -&gt; evaluateIpRule(rule, transaction);</span>
+<span class="fc" id="L50">                case &quot;CUSTOM&quot; -&gt; evaluateCustomRule(rule, transaction);</span>
+                default -&gt; {
+<span class="fc" id="L52">                    log.warn(&quot;Unsupported rule type: {}&quot;, rule.getRuleType());</span>
+<span class="fc" id="L53">                    yield RuleEvaluationResult.builder()</span>
+<span class="fc" id="L54">                        .triggered(false)</span>
+<span class="fc" id="L55">                        .reason(&quot;Unsupported rule type: &quot; + rule.getRuleType())</span>
+<span class="fc" id="L56">                        .ruleName(rule.getRuleName())</span>
+<span class="fc" id="L57">                        .build();</span>
+                }
+            };
+<span class="fc" id="L60">        } catch (Exception e) {</span>
+<span class="fc" id="L61">            log.error(&quot;Error evaluating rule {}: {}&quot;, rule.getRuleName(), e.getMessage(), e);</span>
+<span class="fc" id="L62">            return RuleEvaluationResult.builder()</span>
+<span class="fc" id="L63">                .triggered(false)</span>
+<span class="fc" id="L64">                .reason(&quot;Rule evaluation error: &quot; + e.getMessage())</span>
+<span class="fc" id="L65">                .ruleName(rule.getRuleName())</span>
+<span class="fc" id="L66">                .build();</span>
+        }
+    }
+    
+    @Override
+    public boolean supports(String ruleType) {
+<span class="fc bfc" id="L72" title="All 4 branches covered.">        if (ruleType == null || ruleType.trim().isEmpty()) {</span>
+<span class="fc" id="L73">            return false;</span>
+        }
+<span class="fc" id="L75">        return Set.of(&quot;AMOUNT&quot;, &quot;FREQUENCY&quot;, &quot;TIME_OF_DAY&quot;, &quot;IP_BLACKLIST&quot;, &quot;CUSTOM&quot;)</span>
+<span class="fc" id="L76">            .contains(ruleType.toUpperCase());</span>
+    }
+    
+    /**
+     * Evaluate amount rule
+     */
+    private RuleEvaluationResult evaluateAmountRule(FraudRule rule, Transaction transaction) {
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        if (rule.getThresholdValue() == null) {</span>
+<span class="fc" id="L84">            return RuleEvaluationResult.builder()</span>
+<span class="fc" id="L85">                .triggered(false)</span>
+<span class="fc" id="L86">                .reason(&quot;Threshold value not configured&quot;)</span>
+<span class="fc" id="L87">                .ruleName(rule.getRuleName())</span>
+<span class="fc" id="L88">                .build();</span>
+        }
+        
+<span class="fc bfc" id="L91" title="All 2 branches covered.">        boolean triggered = transaction.getAmount().compareTo(rule.getThresholdValue()) &gt; 0;</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        double riskScore = triggered ? Math.min(transaction.getAmount().doubleValue() / rule.getThresholdValue().doubleValue(), 1.0) : 0.0;</span>
+        
+<span class="fc" id="L94">        return RuleEvaluationResult.builder()</span>
+<span class="fc" id="L95">            .triggered(triggered)</span>
+<span class="fc" id="L96">            .riskScore(riskScore)</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">            .reason(triggered ? String.format(&quot;Transaction amount %.2f exceeds threshold %.2f&quot;, </span>
+<span class="fc" id="L98">                transaction.getAmount(), rule.getThresholdValue()) : &quot;Transaction amount is normal&quot;)</span>
+<span class="fc" id="L99">            .ruleName(rule.getRuleName())</span>
+<span class="fc" id="L100">            .actualValue(transaction.getAmount().toString())</span>
+<span class="fc" id="L101">            .thresholdValue(rule.getThresholdValue().toString())</span>
+<span class="fc" id="L102">            .build();</span>
+    }
+    
+    /**
+     * Evaluate frequency rule
+     */
+    private RuleEvaluationResult evaluateFrequencyRule(FraudRule rule, Transaction transaction) {
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">        if (rule.getThresholdValue() == null) {</span>
+<span class="nc" id="L110">            return RuleEvaluationResult.builder()</span>
+<span class="nc" id="L111">                .triggered(false)</span>
+<span class="nc" id="L112">                .reason(&quot;Threshold value not configured&quot;)</span>
+<span class="nc" id="L113">                .ruleName(rule.getRuleName())</span>
+<span class="nc" id="L114">                .build();</span>
+        }
+        
+<span class="fc" id="L117">        String key = &quot;transactions:user:&quot; + transaction.getUserId();</span>
+<span class="fc" id="L118">        long now = Instant.now().toEpochMilli();</span>
+<span class="fc" id="L119">        long windowStart = now - (TIME_WINDOW_SECONDS * 1000);</span>
+        
+        // Add current transaction
+<span class="fc" id="L122">        redisTemplate.opsForZSet().add(key, String.valueOf(now), now);</span>
+        // Remove old transactions outside the window
+<span class="fc" id="L124">        redisTemplate.opsForZSet().removeRangeByScore(key, 0, windowStart);</span>
+        // Count transactions within the window
+<span class="fc" id="L126">        Long count = redisTemplate.opsForZSet().zCard(key);</span>
+        // Set expiration time to prevent memory leaks
+<span class="fc" id="L128">        redisTemplate.expire(key, TIME_WINDOW_SECONDS, TimeUnit.SECONDS);</span>
+        
+<span class="pc bpc" id="L130" title="1 of 4 branches missed.">        boolean triggered = count != null &amp;&amp; count &gt; rule.getThresholdValue().longValue();</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">        double riskScore = triggered ? Math.min(count.doubleValue() / rule.getThresholdValue().doubleValue(), 1.0) : 0.0;</span>
+        
+<span class="fc" id="L133">        return RuleEvaluationResult.builder()</span>
+<span class="fc" id="L134">            .triggered(triggered)</span>
+<span class="fc" id="L135">            .riskScore(riskScore)</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">            .reason(triggered ? String.format(&quot;User has %d transactions in 1 hour, exceeds threshold %d&quot;, </span>
+<span class="fc" id="L137">                count, rule.getThresholdValue().longValue()) : &quot;Transaction frequency is normal&quot;)</span>
+<span class="fc" id="L138">            .ruleName(rule.getRuleName())</span>
+<span class="fc" id="L139">            .actualValue(String.valueOf(count))</span>
+<span class="fc" id="L140">            .thresholdValue(rule.getThresholdValue().toString())</span>
+<span class="fc" id="L141">            .build();</span>
+    }
+    
+    /**
+     * Evaluate time rule
+     */
+    private RuleEvaluationResult evaluateTimeRule(FraudRule rule, Transaction transaction) {
+<span class="fc" id="L148">        LocalTime transactionTime = transaction.getTimestamp().toLocalTime();</span>
+        // Define suspicious time period: 22:00-06:00 (inclusive boundaries)
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        boolean isSuspiciousTime = !transactionTime.isBefore(LocalTime.of(22, 0)) || </span>
+<span class="fc bfc" id="L151" title="All 2 branches covered.">                                  transactionTime.isBefore(LocalTime.of(6, 0));</span>
+        
+<span class="fc bfc" id="L153" title="All 2 branches covered.">        double riskScore = isSuspiciousTime ? 0.3 : 0.0;</span>
+        
+<span class="fc" id="L155">        return RuleEvaluationResult.builder()</span>
+<span class="fc" id="L156">            .triggered(isSuspiciousTime)</span>
+<span class="fc" id="L157">            .riskScore(riskScore)</span>
+<span class="fc bfc" id="L158" title="All 2 branches covered.">            .reason(isSuspiciousTime ? String.format(&quot;Transaction time %s is suspicious period&quot;, transactionTime) : &quot;Transaction time is normal&quot;)</span>
+<span class="fc" id="L159">            .ruleName(rule.getRuleName())</span>
+<span class="fc" id="L160">            .actualValue(transactionTime.toString())</span>
+<span class="fc" id="L161">            .thresholdValue(&quot;22:00-06:00&quot;)</span>
+<span class="fc" id="L162">            .build();</span>
+    }
+    
+    /**
+     * Evaluate IP rule
+     */
+    private RuleEvaluationResult evaluateIpRule(FraudRule rule, Transaction transaction) {
+<span class="pc bpc" id="L169" title="1 of 2 branches missed.">        boolean isSuspicious = transaction.getIpAddress() != null &amp;&amp; </span>
+<span class="fc bfc" id="L170" title="All 2 branches covered.">                              SUSPICIOUS_IPS.contains(transaction.getIpAddress());</span>
+        
+<span class="fc bfc" id="L172" title="All 2 branches covered.">        double riskScore = isSuspicious ? 0.8 : 0.0;</span>
+        
+<span class="fc" id="L174">        return RuleEvaluationResult.builder()</span>
+<span class="fc" id="L175">            .triggered(isSuspicious)</span>
+<span class="fc" id="L176">            .riskScore(riskScore)</span>
+<span class="fc bfc" id="L177" title="All 2 branches covered.">            .reason(isSuspicious ? String.format(&quot;IP address %s is in blacklist&quot;, transaction.getIpAddress()) : &quot;IP address is safe&quot;)</span>
+<span class="fc" id="L178">            .ruleName(rule.getRuleName())</span>
+<span class="fc" id="L179">            .actualValue(transaction.getIpAddress())</span>
+<span class="fc" id="L180">            .thresholdValue(&quot;IP blacklist&quot;)</span>
+<span class="fc" id="L181">            .build();</span>
+    }
+    
+    /**
+     * Evaluate custom rule - more complex logic can be implemented through configuration fields
+     */
+    private RuleEvaluationResult evaluateCustomRule(FraudRule rule, Transaction transaction) {
+        // Here you can implement custom logic based on rule.getRuleConfig()
+        // For example: parse JSON configuration, implement complex condition combinations
+<span class="fc" id="L190">        log.info(&quot;Custom rule evaluation not implemented for rule: {}&quot;, rule.getRuleName());</span>
+        
+<span class="fc" id="L192">        return RuleEvaluationResult.builder()</span>
+<span class="fc" id="L193">            .triggered(false)</span>
+<span class="fc" id="L194">            .reason(&quot;Custom rule evaluation not implemented&quot;)</span>
+<span class="fc" id="L195">            .ruleName(rule.getRuleName())</span>
+<span class="fc" id="L196">            .build();</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

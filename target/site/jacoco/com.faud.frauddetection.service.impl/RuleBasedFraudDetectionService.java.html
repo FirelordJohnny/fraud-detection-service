@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RuleBasedFraudDetectionService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fraud-detection</a> &gt; <a href="index.source.html" class="el_package">com.faud.frauddetection.service.impl</a> &gt; <span class="el_source">RuleBasedFraudDetectionService.java</span></div><h1>RuleBasedFraudDetectionService.java</h1><pre class="source lang-java linenums">package com.faud.frauddetection.service.impl;
+
+import com.faud.frauddetection.dto.FraudDetectionResult;
+import com.faud.frauddetection.entity.FraudRule;
+import com.faud.frauddetection.repository.FraudRuleRepository;
+import com.faud.frauddetection.service.FraudDetectionResultService;
+import com.faud.frauddetection.service.FraudDetectionService;
+import com.faud.frauddetection.service.evaluator.RuleEngine;
+import com.faud.frauddetection.dto.RuleEvaluationResult;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import com.faud.frauddetection.dto.Transaction;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Rule-based fraud detection service implementation using dynamic rule engine
+ * Supports fully configurable rule management, allowing new rules to be added without code changes
+ */
+@Service
+<span class="fc" id="L24">@Slf4j</span>
+public class RuleBasedFraudDetectionService implements FraudDetectionService {
+
+    private final FraudRuleRepository fraudRuleRepository;
+    private final RuleEngine ruleEngine;
+    private final FraudDetectionResultService resultService;
+    private final double fraudThreshold;
+
+    // Constructor for Spring Boot with @Value injection
+<span class="fc" id="L33">    public RuleBasedFraudDetectionService(</span>
+            FraudRuleRepository fraudRuleRepository, 
+            RuleEngine ruleEngine,
+            FraudDetectionResultService resultService,
+            @Value(&quot;${fraud.detection.fraud-threshold:0.3}&quot;) double fraudThreshold) {
+<span class="fc" id="L38">        this.fraudRuleRepository = fraudRuleRepository;</span>
+<span class="fc" id="L39">        this.ruleEngine = ruleEngine;</span>
+<span class="fc" id="L40">        this.resultService = resultService;</span>
+<span class="fc" id="L41">        this.fraudThreshold = fraudThreshold;</span>
+<span class="fc" id="L42">    }</span>
+
+    // Constructor for testing without Spring context
+    public RuleBasedFraudDetectionService(
+            FraudRuleRepository fraudRuleRepository, 
+            RuleEngine ruleEngine,
+            FraudDetectionResultService resultService) {
+<span class="fc" id="L49">        this(fraudRuleRepository, ruleEngine, resultService, 0.3);</span>
+<span class="fc" id="L50">    }</span>
+
+    @Override
+    public FraudDetectionResult detectFraud(Transaction transaction) {
+<span class="fc" id="L54">        log.info(&quot;Starting fraud detection for transaction ID: {}&quot;, transaction.getTransactionId());</span>
+<span class="fc" id="L55">        long startTime = System.currentTimeMillis();</span>
+
+        // Get all enabled rules
+<span class="fc" id="L58">        List&lt;FraudRule&gt; activeRules = fraudRuleRepository.findAllEnabled();</span>
+<span class="fc" id="L59">        log.debug(&quot;Found {} enabled rules&quot;, activeRules.size());</span>
+
+        // Evaluate all rules
+<span class="fc" id="L62">        List&lt;RuleEvaluationResult&gt; evaluationResults = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L63">        double totalRiskScore = 0.0;</span>
+        
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        for (FraudRule rule : activeRules) {</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">            if (!ruleEngine.supports(rule.getRuleType())) {</span>
+<span class="fc" id="L67">                log.warn(&quot;Unsupported rule type: {}, skipping rule: {}&quot;, rule.getRuleType(), rule.getRuleName());</span>
+<span class="fc" id="L68">                continue;</span>
+            }
+            
+            try {
+<span class="fc" id="L72">                RuleEvaluationResult result = ruleEngine.evaluateRule(rule, transaction);</span>
+<span class="fc" id="L73">                evaluationResults.add(result);</span>
+                
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">                if (result.isTriggered()) {</span>
+<span class="fc" id="L76">                    totalRiskScore += result.getRiskScore();</span>
+<span class="fc" id="L77">                    log.info(&quot;Rule triggered: {} - {}&quot;, rule.getRuleName(), result.getReason());</span>
+                }
+<span class="fc" id="L79">            } catch (Exception e) {</span>
+<span class="fc" id="L80">                log.error(&quot;Error evaluating rule {}: {}&quot;, rule.getRuleName(), e.getMessage(), e);</span>
+                // Continue with other rules
+            }
+        }
+
+        // Calculate final risk score and build result
+<span class="fc" id="L86">        long processingTime = System.currentTimeMillis() - startTime;</span>
+<span class="fc" id="L87">        double finalRiskScore = Math.min(totalRiskScore, 1.0);</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        boolean isFraud = finalRiskScore &gt; fraudThreshold;</span>
+
+        // Build triggered rule descriptions
+<span class="fc" id="L91">        List&lt;String&gt; triggeredReasons = evaluationResults.stream()</span>
+<span class="fc" id="L92">            .filter(RuleEvaluationResult::isTriggered)</span>
+<span class="fc" id="L93">            .map(RuleEvaluationResult::getReason)</span>
+<span class="fc" id="L94">            .toList();</span>
+
+<span class="fc" id="L96">        FraudDetectionResult result = new FraudDetectionResult();</span>
+<span class="fc" id="L97">        result.setTransactionId(transaction.getTransactionId());</span>
+<span class="fc" id="L98">        result.setFraud(isFraud);</span>
+<span class="fc" id="L99">        result.setRiskScore(finalRiskScore);</span>
+<span class="fc" id="L100">        result.setReason(String.join(&quot;; &quot;, triggeredReasons));</span>
+<span class="fc" id="L101">        result.setDetectionTimestamp(LocalDateTime.now());</span>
+<span class="fc" id="L102">        result.setProcessingTime(processingTime);</span>
+
+        // Record detailed evaluation results for audit
+<span class="fc" id="L105">        StringBuilder detailLog = new StringBuilder();</span>
+<span class="fc" id="L106">        detailLog.append(String.format(&quot;Transaction ID: %s, Is Fraud: %s, Risk Score: %.3f, Processing Time: %dms&quot;, </span>
+<span class="fc" id="L107">            transaction.getTransactionId(), result.isFraud(), result.getRiskScore(), result.getProcessingTime()));</span>
+        
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        for (RuleEvaluationResult evalResult : evaluationResults) {</span>
+<span class="fc" id="L110">            detailLog.append(String.format(&quot;\n  Rule: %s, Triggered: %s, Score: %.3f, Reason: %s&quot;, </span>
+<span class="fc" id="L111">                evalResult.getRuleName(), evalResult.isTriggered(), </span>
+<span class="fc" id="L112">                evalResult.getRiskScore(), evalResult.getReason()));</span>
+        }
+        
+<span class="fc" id="L115">        log.info(&quot;Fraud detection completed: {}&quot;, detailLog.toString());</span>
+
+        // Save detection result
+        try {
+<span class="fc" id="L119">            resultService.saveResult(result);</span>
+<span class="pc" id="L120">        } catch (Exception e) {</span>
+<span class="nc" id="L121">            log.error(&quot;Failed to save detection result: {}&quot;, e.getMessage(), e);</span>
+        }
+
+<span class="fc" id="L124">        return result;</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
