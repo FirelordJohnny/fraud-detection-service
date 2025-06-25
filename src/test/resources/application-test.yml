@@ -1,0 +1,94 @@
+spring:
+  application:
+    name: fraud-detection-service-test
+  
+  # Test database configuration
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  
+  # JPA configuration
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+  
+  # H2 console
+  h2:
+    console:
+      enabled: true
+  
+  # Kafka configuration (using embedded test)
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: fraud-detection-test-group
+      auto-offset-reset: earliest
+    producer:
+      bootstrap-servers: localhost:9092
+
+# Fraud detection configuration
+fraud:
+  detection:
+    enabled: true
+    fraud-threshold: 0.3
+    async-processing: false
+    batch-size: 10
+    thread-pool-size: 2
+  
+  alerts:
+    email:
+      enabled: false
+    webhook:
+      enabled: false
+  
+  rules:
+    refresh-interval: 60
+    cache-enabled: false
+
+# JWT Configuration for Tests
+jwt:
+  secret: testSecretKeyForFraudDetectionService2024!@#$%^&*()1234567890
+  expiration: 3600
+
+# Security Configuration for Tests
+security:
+  permitted-paths:
+    - /actuator/**
+    - /test/**
+
+# API Token Configuration for Tests
+api:
+  token:
+    internal: test-internal-api-token
+
+# Logging Configuration for Tests
+logging:
+  level:
+    com.faud.frauddetection: DEBUG
+    org.springframework.kafka: WARN
+    org.apache.ibatis: INFO
+    org.springframework.data.redis: DEBUG
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# Test Redis Configuration
+redis:
+  host: localhost
+  port: 6379
+  timeout: 2000ms
+  lettuce:
+    pool:
+      max-active: 8
+      max-idle: 8
+      min-idle: 0
+
+# MyBatis Configuration
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.faud.frauddetection.dto
+  configuration:
+    map-underscore-to-camel-case: true 

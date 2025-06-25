@@ -1,0 +1,174 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api/v1
+
+spring:
+  application:
+    name: fraud-detection-service
+  
+  # Database Configuration
+  datasource:
+    url: jdbc:mysql://localhost:3306/frauddb?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: frauduser
+    password: password
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  
+  # Kafka Configuration
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: fraud-detection-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      enable-auto-commit: true
+      auto-commit-interval: 1000
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      retries: 3
+      batch-size: 16384
+      linger-ms: 1
+      buffer-memory: 33554432
+
+# MyBatis Configuration
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.faud.frauddetection.model
+  configuration:
+    map-underscore-to-camel-case: true
+    use-generated-keys: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:mySecretKeyForFraudDetectionService2024!@#$%^&*()1234567890}
+  expiration: ${JWT_EXPIRATION:86400} # 24 hours in seconds
+
+# Security Configuration
+security:
+  permitted-paths:
+    - /actuator/**
+    - /h2-console/**
+    - /health
+    - /fraud-rules/health
+    - /internal/fraud-analysis/health
+
+# API Token Configuration
+api:
+  token:
+    internal: ${INTERNAL_API_TOKEN:internal-api-token-2024}
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+
+# Logging Configuration
+logging:
+  level:
+    com.faud.frauddetection: INFO
+    org.springframework.kafka: INFO
+    org.apache.ibatis: DEBUG
+    com.faud.frauddetection.mapper: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/fraud-detection.log
+    max-size: 100MB
+    max-history: 30
+
+# Custom Application Configuration
+fraud:
+  detection:
+    enabled: true
+    async-processing: true
+    batch-size: 100
+    thread-pool-size: 10
+    fraud-threshold: 0.3  # Risk score threshold for fraud classification
+  
+  alerts:
+    email:
+      enabled: false
+      smtp:
+        host: localhost
+        port: 587
+        username: alerts@frauddetection.com
+        password: password
+    webhook:
+      enabled: true
+      url: http://localhost:8080/webhook/fraud-alert
+      timeout: 5000
+  
+  rules:
+    refresh-interval: 300 # seconds
+    cache-enabled: true
+    cache-ttl: 600 # seconds
+
+# Redis configuration
+redis:
+  host: localhost
+  port: 6379
+
+# Kafka Configuration
+kafka:
+  bootstrap-servers: localhost:9092
+
+---
+# Production Configuration
+spring:
+  config:
+    activate:
+      on-profile: prod
+  
+  # Production Database Configuration
+  datasource:
+    url: jdbc:mysql://${DB_HOST:mysql-service}:${DB_PORT:3306}/${DB_NAME:frauddb}?useSSL=true&serverTimezone=UTC
+    username: ${DB_USERNAME:frauduser}
+    password: ${DB_PASSWORD:password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 10
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  
+  # Production Kafka Configuration
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka-cluster:9092}
+    
+logging:
+  level:
+    com.faud.frauddetection: INFO
+    org.apache.ibatis: WARN
+
+# JPA Configuration
+jpa:
+  hibernate:
+    ddl-auto: validate
+  show-sql: true 

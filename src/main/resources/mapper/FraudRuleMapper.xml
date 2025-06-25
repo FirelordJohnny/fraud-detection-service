@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.faud.frauddetection.mapper.FraudRuleMapper">
+
+    <resultMap id="FraudRuleResultMap" type="com.faud.frauddetection.entity.FraudRule">
+        <id property="id" column="id"/>
+        <result property="ruleName" column="rule_name"/>
+        <result property="description" column="description"/>
+        <result property="ruleType" column="rule_type"/>
+        <result property="thresholdValue" column="threshold_value"/>
+        <result property="conditionField" column="condition_field"/>
+        <result property="conditionOperator" column="condition_operator"/>
+        <result property="conditionValue" column="condition_value"/>
+        <result property="enabled" column="enabled"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO fraud_rules (rule_name, description, rule_type, threshold_value,
+                                 condition_field, condition_operator, condition_value,
+                                 enabled, created_at, updated_at)
+        VALUES (#{ruleName}, #{description}, #{ruleType}, #{thresholdValue},
+                #{conditionField}, #{conditionOperator}, #{conditionValue},
+                #{enabled}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <select id="findById" resultMap="FraudRuleResultMap">
+        SELECT * FROM fraud_rules WHERE id = #{id}
+    </select>
+
+    <select id="findAll" resultMap="FraudRuleResultMap">
+        SELECT * FROM fraud_rules ORDER BY created_at DESC
+    </select>
+
+    <select id="findAllActive" resultMap="FraudRuleResultMap">
+        SELECT * FROM fraud_rules WHERE enabled = true ORDER BY created_at DESC
+    </select>
+
+    <select id="findAllEnabled" resultMap="FraudRuleResultMap">
+        SELECT * FROM fraud_rules WHERE enabled = true ORDER BY created_at DESC
+    </select>
+
+    <select id="findByRuleType" resultMap="FraudRuleResultMap">
+        SELECT * FROM fraud_rules WHERE rule_type = #{ruleType} AND enabled = true
+    </select>
+
+    <update id="update">
+        UPDATE fraud_rules
+        SET rule_name          = #{ruleName},
+            description        = #{description},
+            rule_type          = #{ruleType},
+            threshold_value    = #{thresholdValue},
+            condition_field    = #{conditionField},
+            condition_operator = #{conditionOperator},
+            condition_value    = #{conditionValue},
+            enabled            = #{enabled},
+            updated_at         = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateStatus">
+        UPDATE fraud_rules
+        SET enabled    = #{enabled},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM fraud_rules WHERE id = #{id}
+    </delete>
+
+</mapper> 

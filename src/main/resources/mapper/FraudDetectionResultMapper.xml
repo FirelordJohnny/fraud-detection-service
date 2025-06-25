@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.faud.frauddetection.mapper.FraudDetectionResultMapper">
+
+    <resultMap id="FraudDetectionResultMap" type="com.faud.frauddetection.entity.FraudDetectionResultEntity">
+        <id property="id" column="id"/>
+        <result property="transactionId" column="transaction_id"/>
+        <result property="isFraud" column="is_fraud"/>
+        <result property="riskScore" column="risk_score"/>
+        <result property="reason" column="reason"/>
+        <result property="detectionTimestamp" column="detection_timestamp"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.faud.frauddetection.entity.FraudDetectionResultEntity" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO fraud_detection_results (transaction_id, is_fraud, risk_score, reason, detection_timestamp)
+        VALUES (#{transactionId}, #{isFraud}, #{riskScore}, #{reason}, #{detectionTimestamp})
+    </insert>
+
+    <select id="findById" resultMap="FraudDetectionResultMap">
+        SELECT * FROM fraud_detection_results WHERE id = #{id}
+    </select>
+
+    <select id="findAll" resultMap="FraudDetectionResultMap">
+        SELECT * FROM fraud_detection_results ORDER BY detection_timestamp DESC
+    </select>
+
+    <update id="updateStatus">
+        UPDATE fraud_detection_results
+        SET review_status = #{status},
+            reviewed_by = #{reviewedBy},
+            reviewed_at = NOW(),
+            updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM fraud_detection_results WHERE id = #{id}
+    </delete>
+
+</mapper> 
