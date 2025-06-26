@@ -1,64 +1,54 @@
 package com.faud.frauddetection.dto;
 
-import java.time.LocalDateTime;
+import lombok.Builder;
+import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class FraudDetectionResult {
 
     private String transactionId;
-    private boolean isFraud;
+    private boolean isFraudulent;
     private double riskScore;
+    private String riskLevel;
     private String reason;
-    private LocalDateTime detectionTimestamp;
+    private LocalDateTime detectionTime;
     private long processingTime;
-
-    public FraudDetectionResult() {
-    }
-
-    public String getTransactionId() {
-        return transactionId;
-    }
-
-    public void setTransactionId(String transactionId) {
-        this.transactionId = transactionId;
-    }
-
+    private List<RuleEvaluationResult> evaluationResults;
+    
+    // Convenience fields for triggered rules
+    @Builder.Default
+    private List<RuleEvaluationResult> triggeredRules = new java.util.ArrayList<>();
+    
+    // Additional validation/metadata fields
+    private String evaluationStatus;
+    private String alertStatus;
+    
+    // Legacy method names for backward compatibility
     public boolean isFraud() {
-        return isFraud;
+        return isFraudulent;
     }
-
+    
     public void setFraud(boolean fraud) {
-        isFraud = fraud;
+        this.isFraudulent = fraud;
     }
-
-    public double getRiskScore() {
-        return riskScore;
-    }
-
-    public void setRiskScore(double riskScore) {
-        this.riskScore = riskScore;
-    }
-
-    public String getReason() {
-        return reason;
-    }
-
-    public void setReason(String reason) {
-        this.reason = reason;
-    }
-
+    
     public LocalDateTime getDetectionTimestamp() {
-        return detectionTimestamp;
+        return detectionTime;
     }
-
-    public void setDetectionTimestamp(LocalDateTime detectionTimestamp) {
-        this.detectionTimestamp = detectionTimestamp;
+    
+    public void setDetectionTimestamp(LocalDateTime timestamp) {
+        this.detectionTime = timestamp;
     }
-
-    public long getProcessingTime() {
-        return processingTime;
-    }
-
-    public void setProcessingTime(long processingTime) {
-        this.processingTime = processingTime;
+    
+    public List<RuleEvaluationResult> getTriggeredRules() {
+        return triggeredRules;
     }
 } 

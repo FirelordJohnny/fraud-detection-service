@@ -4,7 +4,6 @@ import com.faud.frauddetection.dto.FraudDetectionResult;
 import com.faud.frauddetection.entity.FraudDetectionResultEntity;
 import com.faud.frauddetection.repository.FraudDetectionResultRepository;
 import com.faud.frauddetection.service.FraudDetectionResultService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,30 +17,29 @@ public class FraudDetectionResultServiceImpl implements FraudDetectionResultServ
 
     private final FraudDetectionResultRepository resultRepository;
 
-    @Autowired
-<span class="nc" id="L22">    public FraudDetectionResultServiceImpl(FraudDetectionResultRepository resultRepository) {</span>
-<span class="nc" id="L23">        this.resultRepository = resultRepository;</span>
-<span class="nc" id="L24">    }</span>
+<span class="fc" id="L20">    public FraudDetectionResultServiceImpl(FraudDetectionResultRepository resultRepository) {</span>
+<span class="fc" id="L21">        this.resultRepository = resultRepository;</span>
+<span class="fc" id="L22">    }</span>
 
     @Override
     public void saveResult(FraudDetectionResult resultDto) {
-<span class="nc" id="L28">        FraudDetectionResultEntity entity = new FraudDetectionResultEntity();</span>
-<span class="nc" id="L29">        entity.setTransactionId(resultDto.getTransactionId());</span>
-<span class="nc" id="L30">        entity.setFraud(resultDto.isFraud());</span>
-<span class="nc" id="L31">        entity.setRiskScore(resultDto.getRiskScore());</span>
-<span class="nc" id="L32">        entity.setReason(resultDto.getReason());</span>
-<span class="nc" id="L33">        entity.setDetectionTimestamp(resultDto.getDetectionTimestamp());</span>
-<span class="nc" id="L34">        resultRepository.save(entity);</span>
-<span class="nc" id="L35">    }</span>
+<span class="fc" id="L26">        FraudDetectionResultEntity entity = new FraudDetectionResultEntity();</span>
+<span class="fc" id="L27">        entity.setTransactionId(resultDto.getTransactionId());</span>
+<span class="fc" id="L28">        entity.setFraud(resultDto.isFraudulent());</span>
+<span class="fc" id="L29">        entity.setRiskScore(resultDto.getRiskScore());</span>
+<span class="fc" id="L30">        entity.setReason(resultDto.getReason());</span>
+<span class="fc" id="L31">        entity.setDetectionTimestamp(resultDto.getDetectionTime());</span>
+<span class="fc" id="L32">        resultRepository.save(entity);</span>
+<span class="fc" id="L33">    }</span>
 
     @Override
     public List&lt;FraudDetectionResultEntity&gt; getAllResults() {
-<span class="nc" id="L39">        return resultRepository.findAll();</span>
+<span class="fc" id="L37">        return resultRepository.findAll();</span>
     }
 
     @Override
     public Optional&lt;FraudDetectionResultEntity&gt; getResultById(Long id) {
-<span class="nc" id="L44">        return resultRepository.findById(id);</span>
+<span class="fc" id="L42">        return resultRepository.findById(id);</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

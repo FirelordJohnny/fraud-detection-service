@@ -3,7 +3,6 @@
 import com.faud.frauddetection.entity.FraudDetectionResultEntity;
 import com.faud.frauddetection.mapper.FraudDetectionResultMapper;
 import com.faud.frauddetection.repository.FraudDetectionResultRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -14,25 +13,24 @@ public class FraudDetectionResultRepositoryImpl implements FraudDetectionResultR
 
     private final FraudDetectionResultMapper resultMapper;
 
-    @Autowired
-<span class="nc" id="L18">    public FraudDetectionResultRepositoryImpl(FraudDetectionResultMapper resultMapper) {</span>
-<span class="nc" id="L19">        this.resultMapper = resultMapper;</span>
-<span class="nc" id="L20">    }</span>
+<span class="fc" id="L16">    public FraudDetectionResultRepositoryImpl(FraudDetectionResultMapper resultMapper) {</span>
+<span class="fc" id="L17">        this.resultMapper = resultMapper;</span>
+<span class="fc" id="L18">    }</span>
 
     @Override
     public FraudDetectionResultEntity save(FraudDetectionResultEntity result) {
-<span class="nc" id="L24">        resultMapper.insert(result);</span>
-<span class="nc" id="L25">        return result;</span>
+<span class="fc" id="L22">        resultMapper.insert(result);</span>
+<span class="fc" id="L23">        return result;</span>
     }
 
     @Override
     public Optional&lt;FraudDetectionResultEntity&gt; findById(Long id) {
-<span class="nc" id="L30">        return Optional.ofNullable(resultMapper.findById(id));</span>
+<span class="fc" id="L28">        return Optional.ofNullable(resultMapper.findById(id));</span>
     }
 
     @Override
     public List&lt;FraudDetectionResultEntity&gt; findAll() {
-<span class="nc" id="L35">        return resultMapper.findAll();</span>
+<span class="fc" id="L33">        return resultMapper.findAll();</span>
     }
 
     // @Override

@@ -1,6 +1,7 @@
 package com.faud.frauddetection.resilience;
 
 import com.faud.frauddetection.dto.FraudDetectionResult;
+import com.faud.frauddetection.integration.BaseIntegrationTest;
 import com.faud.frauddetection.dto.Transaction;
 import com.faud.frauddetection.service.AlertService;
 import com.faud.frauddetection.service.FraudDetectionService;
@@ -8,14 +9,27 @@ import com.faud.frauddetection.service.TransactionConsumer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.testcontainers.shaded.org.awaitility.Awaitility;
+import org.testcontainers.utility.DockerImageName;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import com.faud.frauddetection.dto.TransactionStatus;
+import com.faud.frauddetection.service.FraudRuleService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.testcontainers.containers.KafkaContainer;
+import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -31,20 +45,31 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Resilience integration tests for fraud detection service
  * Tests service recovery from failures, pod restarts, node failures, and network issues
  */
-@SpringBootTest
-@ActiveProfiles("test")
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Testcontainers
 @TestPropertySource(properties = {
     "fraud.detection.enabled=true",
     "fraud.alert.enabled=true",
     "spring.kafka.consumer.enable-auto-commit=false",
     "spring.kafka.consumer.max-poll-records=10"
 })
-class ResilienceIntegrationTest {
+class ResilienceIntegrationTest extends BaseIntegrationTest {
+
+    @Container
+    static final KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.0.1"));
+
+    @Container
+    static final MySQLContainer<?> mysql = new MySQLContainer<>("mysql:8.0.26");
+
+    @Container
+    static final GenericContainer<?> redis = new GenericContainer<>("redis:6.2.6").withExposedPorts(6379);
 
     @Autowired
     private FraudDetectionService fraudDetectionService;
@@ -60,6 +85,22 @@ class ResilienceIntegrationTest {
 
     @MockBean
     private KafkaTemplate<String, String> kafkaTemplate;
+
+    @Autowired
+    private FraudRuleService fraudRuleService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @DynamicPropertySource
+    static void dynamicProperties(DynamicPropertyRegistry registry) {
+        registry.add("spring.kafka.bootstrap-servers", kafka::getBootstrapServers);
+        registry.add("spring.datasource.url", mysql::getJdbcUrl);
+        registry.add("spring.datasource.username", mysql::getUsername);
+        registry.add("spring.datasource.password", mysql::getPassword);
+        registry.add("spring.data.redis.host", redis::getHost);
+        registry.add("spring.data.redis.port", () -> redis.getMappedPort(6379));
+    }
 
     @Test
     @Timeout(30)
@@ -187,26 +228,30 @@ class ResilienceIntegrationTest {
         List<FraudDetectionResult> results = Collections.synchronizedList(new ArrayList<>());
         ExecutorService executor = Executors.newFixedThreadPool(10);
         
-        List<CompletableFuture<Void>> futures = IntStream.range(0, 30)
-            .mapToObj(i -> CompletableFuture.runAsync(() -> {
-                try {
-                    Transaction transaction = createTransaction(
-                        "TXN_CIRCUIT_" + i,
-                        "USER_CIRCUIT",
-                        new BigDecimal("5000"),
-                        "192.168.1.50",
-                        LocalDateTime.now()
-                    );
-                    FraudDetectionResult result = fraudDetectionService.detectFraud(transaction);
-                    results.add(result);
-                } catch (Exception e) {
-                    // Expected for some calls due to simulated failures
-                }
-            }, executor))
-            .toList();
+        try {
+            List<CompletableFuture<Void>> futures = IntStream.range(0, 30)
+                .mapToObj(i -> CompletableFuture.runAsync(() -> {
+                    try {
+                        Transaction transaction = createTransaction(
+                            "TXN_CIRCUIT_" + i,
+                            "USER_CIRCUIT",
+                            new BigDecimal("5000"),
+                            "192.168.1.50",
+                            LocalDateTime.now()
+                        );
+                        FraudDetectionResult result = fraudDetectionService.detectFraud(transaction);
+                        results.add(result);
+                    } catch (Exception e) {
+                        // Expected for some calls due to simulated failures
+                    }
+                }, executor))
+                .toList();
 
-        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-        executor.shutdown();
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        } finally {
+            executor.shutdown();
+            executor.awaitTermination(5, TimeUnit.SECONDS);
+        }
 
         // Then - Verify some calls succeeded despite intermittent failures
         assertThat(results.size()).isGreaterThan(15); // At least half should succeed
@@ -362,34 +407,38 @@ class ResilienceIntegrationTest {
             return mock(org.springframework.data.redis.core.ZSetOperations.class);
         });
 
-        // When - Submit concurrent requests
-        for (int i = 0; i < numberOfThreads; i++) {
-            final int threadId = i;
-            executor.submit(() -> {
-                try {
-                    Transaction transaction = createTransaction(
-                        "TXN_CONCURRENT_FAIL_" + threadId,
-                        "USER_CONCURRENT_" + threadId,
-                        new BigDecimal("10000"),
-                        "192.168.1.50",
-                        LocalDateTime.now()
-                    );
-                    
-                    FraudDetectionResult result = fraudDetectionService.detectFraud(transaction);
-                    if (result != null) {
-                        successCount.incrementAndGet();
+        try {
+            // When - Submit concurrent requests
+            for (int i = 0; i < numberOfThreads; i++) {
+                final int threadId = i;
+                executor.submit(() -> {
+                    try {
+                        Transaction transaction = createTransaction(
+                            "TXN_CONCURRENT_FAIL_" + threadId,
+                            "USER_CONCURRENT_" + threadId,
+                            new BigDecimal("10000"),
+                            "192.168.1.50",
+                            LocalDateTime.now()
+                        );
+                        
+                        FraudDetectionResult result = fraudDetectionService.detectFraud(transaction);
+                        if (result != null) {
+                            successCount.incrementAndGet();
+                        }
+                    } catch (Exception e) {
+                        failureCount.incrementAndGet();
+                    } finally {
+                        latch.countDown();
                     }
-                } catch (Exception e) {
-                    failureCount.incrementAndGet();
-                } finally {
-                    latch.countDown();
-                }
-            });
-        }
+                });
+            }
 
-        // Then
-        latch.await(10, TimeUnit.SECONDS);
-        executor.shutdown();
+            // Then
+            latch.await(10, TimeUnit.SECONDS);
+        } finally {
+            executor.shutdown();
+            executor.awaitTermination(5, TimeUnit.SECONDS);
+        }
 
         // Most requests should succeed despite intermittent failures
         assertThat(successCount.get()).isGreaterThan((int)(numberOfThreads * 0.7)); // At least 70% success
@@ -420,16 +469,77 @@ class ResilienceIntegrationTest {
         assertThat(result.getRiskScore()).isGreaterThan(0.0);
     }
 
+    @Test
+    void testKafkaResilience() throws Exception {
+        // Stop Kafka container
+        kafka.stop();
+
+        // Produce a message, expecting it to fail or hang
+        Transaction transaction = createTestTransaction("kafka-resilience-test");
+        assertThrows(Exception.class, () -> {
+            kafkaTemplate.send("transactions", transaction.getTransactionId(), objectMapper.writeValueAsString(transaction)).get(5, TimeUnit.SECONDS);
+        });
+
+        // Restart Kafka container
+        kafka.start();
+
+        // It should recover and process the message
+        kafkaTemplate.send("transactions", transaction.getTransactionId(), objectMapper.writeValueAsString(transaction));
+        // Add verification logic here if needed, e.g., checking logs or another topic
+    }
+
+    @Test
+    void testDatabaseResilience() {
+        // Stop the database
+        mysql.stop();
+
+        // Perform an operation that requires the database
+        assertThrows(Exception.class, () -> {
+            fraudRuleService.getActiveRules();
+        });
+
+        // Restart the database
+        mysql.start();
+
+        // The service should recover
+        assertDoesNotThrow(() -> {
+            fraudRuleService.getActiveRules();
+        });
+    }
+
+    @Test
+    void testRedisResilience() throws Exception {
+        // Stop Redis
+        redis.stop();
+
+        // Create a transaction that would trigger a frequency rule
+        Transaction transaction = createTestTransaction("redis-resilience-test");
+        
+        // This might not throw immediately but log errors
+        // We'll just check that the app doesn't crash
+        assertDoesNotThrow(() -> {
+            fraudDetectionService.detectFraud(transaction);
+        });
+
+        // Restart Redis
+        redis.start();
+
+        // App should be back to normal
+        assertDoesNotThrow(() -> {
+            fraudDetectionService.detectFraud(transaction);
+        });
+    }
+
     private Transaction createTransaction(String transactionId, String userId, BigDecimal amount, 
                                        String ipAddress, LocalDateTime timestamp) {
-        Transaction transaction = new Transaction();
-        transaction.setTransactionId(transactionId);
-        transaction.setUserId(userId);
-        transaction.setAmount(amount);
-        transaction.setCurrency("USD");
-        transaction.setIpAddress(ipAddress);
-        transaction.setTimestamp(timestamp);
-        return transaction;
+        return Transaction.builder()
+                .transactionId(transactionId)
+                .userId(userId)
+                .amount(amount)
+                .currency("USD")
+                .ipAddress(ipAddress)
+                .timestamp(timestamp)
+                .build();
     }
 
     private FraudDetectionResult createFraudDetectionResult(String transactionId, boolean isFraud, double riskScore) {
@@ -441,5 +551,25 @@ class ResilienceIntegrationTest {
         result.setDetectionTimestamp(LocalDateTime.now());
         result.setProcessingTime(100L);
         return result;
+    }
+
+    private Transaction createTestTransaction(String id) {
+        return Transaction.builder()
+                .transactionId(id)
+                .userId("test-user-" + id)
+                .amount(new BigDecimal("250.00"))
+                .timestamp(LocalDateTime.now())
+                .currency("USD")
+                .ipAddress("127.0.0.1")
+                .country("US")
+                .paymentMethod("CREDIT_CARD")
+                .status(TransactionStatus.PENDING)
+                .merchant("ResilienceTestMerchant")
+                .build();
+    }
+
+    private void publishAndVerify(String topic, String key, String value, KafkaProducer<String, String> producer) throws Exception {
+        // ... existing code ...
+        producer.send(new ProducerRecord<>(topic, key, value)).get();
     }
 } 

@@ -6,10 +6,11 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.faud.frauddetection.dto.FraudDetectionResult;
 import com.faud.frauddetection.dto.Transaction;
+import com.faud.frauddetection.dto.TransactionStatus;
 import com.faud.frauddetection.service.AlertService;
 import com.faud.frauddetection.service.FraudDetectionService;
-import com.faud.frauddetection.service.impl.RuleBasedFraudDetectionService;
-import com.faud.frauddetection.service.evaluator.impl.DynamicRuleEngine;
+import com.faud.frauddetection.service.impl.FraudDetectionServiceImpl;
+import com.faud.frauddetection.service.evaluator.DynamicEvaluator;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +21,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -33,7 +36,8 @@ import static org.mockito.Mockito.*;
  * Integration tests for logging services
  * Verifies structured logging, log levels, and log content for fraud detection operations
  */
-@SpringBootTest
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Testcontainers
 @ActiveProfiles("test")
 @TestPropertySource(properties = {
     "logging.level.com.faud.frauddetection=DEBUG",
@@ -62,8 +66,8 @@ class LoggingIntegrationTest {
     void setUp() {
         // Set up log appenders for different services
         setupLogAppender(AlertService.class, "alertServiceAppender");
-        setupLogAppender(RuleBasedFraudDetectionService.class, "fraudDetectionAppender");
-        setupLogAppender(DynamicRuleEngine.class, "ruleEngineAppender");
+        setupLogAppender(FraudDetectionServiceImpl.class, "fraudDetectionAppender");
+        setupLogAppender(DynamicEvaluator.class, "ruleEngineAppender");
     }
 
     @AfterEach
@@ -135,7 +139,7 @@ class LoggingIntegrationTest {
     @Test
     void testFraudDetectionServiceLogging() {
         // Given
-        Transaction transaction = createTestTransaction("TXN_SERVICE_001", new BigDecimal("15000"));
+        Transaction transaction = createTestTransaction("logging-test-1");
 
         // When
         FraudDetectionResult result = fraudDetectionService.detectFraud(transaction);
@@ -150,7 +154,7 @@ class LoggingIntegrationTest {
             .collect(Collectors.toList());
         
         assertThat(startLogs).hasSize(1);
-        assertThat(startLogs.get(0).getFormattedMessage()).contains("TXN_SERVICE_001");
+        assertThat(startLogs.get(0).getFormattedMessage()).contains("logging-test-1");
 
         // Verify fraud detection completion log
         List<ILoggingEvent> completionLogs = logEvents.stream()
@@ -160,14 +164,14 @@ class LoggingIntegrationTest {
         
         assertThat(completionLogs).hasSize(1);
         ILoggingEvent completionLog = completionLogs.get(0);
-        assertThat(completionLog.getFormattedMessage()).contains("TXN_SERVICE_001");
+        assertThat(completionLog.getFormattedMessage()).contains("logging-test-1");
         assertThat(completionLog.getFormattedMessage()).contains("Processing Time:");
     }
 
     @Test
     void testRuleEngineDebugLogging() {
         // Given
-        Transaction transaction = createTestTransaction("TXN_RULE_001", new BigDecimal("25000"));
+        Transaction transaction = createTestTransaction("TXN_RULE_001");
 
         // When
         fraudDetectionService.detectFraud(transaction);
@@ -189,8 +193,9 @@ class LoggingIntegrationTest {
     @Test
     void testErrorLoggingForInvalidData() {
         // Given
-        FraudDetectionResult invalidResult = new FraudDetectionResult();
-        invalidResult.setTransactionId(null); // Invalid data to trigger error
+        FraudDetectionResult invalidResult = FraudDetectionResult.builder()
+            .transactionId(null) // Invalid data to trigger error
+            .build();
 
         // When
         try {
@@ -241,7 +246,7 @@ class LoggingIntegrationTest {
     @Test
     void testLogLevelFiltering() {
         // Given
-        Transaction transaction = createTestTransaction("TXN_LEVEL_001", new BigDecimal("5000"));
+        Transaction transaction = createTestTransaction("TXN_LEVEL_001");
 
         // When
         fraudDetectionService.detectFraud(transaction);
@@ -268,7 +273,7 @@ class LoggingIntegrationTest {
         for (int i = 0; i < numberOfTransactions; i++) {
             final int transactionIndex = i;
             threads[i] = new Thread(() -> {
-                Transaction transaction = createTestTransaction("TXN_CONCURRENT_" + transactionIndex, new BigDecimal("10000"));
+                Transaction transaction = createTestTransaction("TXN_CONCURRENT_" + transactionIndex);
                 fraudDetectionService.detectFraud(transaction);
             });
             threads[i].start();
@@ -320,25 +325,29 @@ class LoggingIntegrationTest {
         }
     }
 
-    private Transaction createTestTransaction(String transactionId, BigDecimal amount) {
-        Transaction transaction = new Transaction();
-        transaction.setTransactionId(transactionId);
-        transaction.setUserId("USER_LOG_TEST");
-        transaction.setAmount(amount);
-        transaction.setCurrency("USD");
-        transaction.setIpAddress("192.168.1.100");
-        transaction.setTimestamp(LocalDateTime.now());
-        return transaction;
+    private Transaction createTestTransaction(String id) {
+        return Transaction.builder()
+                .transactionId(id)
+                .userId("test-user-" + id)
+                .amount(new BigDecimal("123.45"))
+                .timestamp(LocalDateTime.now())
+                .currency("JPY")
+                .ipAddress("10.0.0.1")
+                .country("JP")
+                .paymentMethod("BANK_TRANSFER")
+                .status(TransactionStatus.PENDING)
+                .merchant("LoggingTestMerchant")
+                .build();
     }
 
     private FraudDetectionResult createFraudDetectionResult(String transactionId, boolean isFraud, double riskScore) {
-        FraudDetectionResult result = new FraudDetectionResult();
-        result.setTransactionId(transactionId);
-        result.setFraud(isFraud);
-        result.setRiskScore(riskScore);
-        result.setReason(isFraud ? "High risk transaction detected" : "Normal transaction");
-        result.setDetectionTimestamp(LocalDateTime.now());
-        result.setProcessingTime(100L);
-        return result;
+        return FraudDetectionResult.builder()
+            .transactionId(transactionId)
+            .isFraudulent(isFraud)
+            .riskScore(riskScore)
+            .reason(isFraud ? "High risk transaction detected" : "Normal transaction")
+            .detectionTime(LocalDateTime.now())
+            .processingTime(100L)
+            .build();
     }
 } 

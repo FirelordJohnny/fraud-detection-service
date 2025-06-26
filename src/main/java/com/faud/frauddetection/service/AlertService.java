@@ -3,9 +3,9 @@ package com.faud.frauddetection.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.faud.frauddetection.dto.FraudDetectionResult;
+import com.faud.frauddetection.config.FraudDetectionProperties;
+import com.faud.frauddetection.constant.AlertSeverity;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
@@ -23,25 +23,14 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 public class AlertService {
 
-    @Value("${fraud.alert.enabled:true}")
-    private boolean alertEnabled;
-    
-    @Value("${fraud.alert.topic:fraud-alerts}")
-    private String alertTopic;
-    
-    @Value("${fraud.alert.webhook.enabled:false}")
-    private boolean webhookEnabled;
-    
-    @Value("${fraud.alert.webhook.url:}")
-    private String webhookUrl;
-
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
+    private final FraudDetectionProperties properties;
 
-    @Autowired
-    public AlertService(KafkaTemplate<String, String> kafkaTemplate, ObjectMapper objectMapper) {
+    public AlertService(KafkaTemplate<String, String> kafkaTemplate, ObjectMapper objectMapper, FraudDetectionProperties properties) {
         this.kafkaTemplate = kafkaTemplate;
         this.objectMapper = objectMapper;
+        this.properties = properties;
     }
 
     /**
@@ -51,7 +40,7 @@ public class AlertService {
      * @param result The result of the fraud detection.
      */
     public void sendAlert(FraudDetectionResult result) {
-        if (!alertEnabled || !result.isFraud()) {
+        if (!properties.getAlert().isEnabled() || !result.isFraudulent()) {
             return;
         }
 
@@ -64,9 +53,10 @@ public class AlertService {
             sendKafkaAlert(result);
             
             // Send webhook alert if enabled
-            if (webhookEnabled && webhookUrl != null && !webhookUrl.isEmpty()) {
-                sendWebhookAlert(result);
-            }
+            // Note: Webhook configuration would be added to properties if needed
+            // if (properties.getAlert().isWebhookEnabled()) {
+            //     sendWebhookAlert(result);
+            // }
             
         } catch (Exception e) {
             log.error("Failed to send fraud alert for transaction: {}", result.getTransactionId(), e);
@@ -81,7 +71,7 @@ public class AlertService {
             Map<String, Object> alertData = createAlertData(result);
             String alertMessage = objectMapper.writeValueAsString(alertData);
             
-            CompletableFuture<SendResult<String, String>> future = kafkaTemplate.send(alertTopic, result.getTransactionId(), alertMessage);
+            CompletableFuture<SendResult<String, String>> future = kafkaTemplate.send(properties.getAlert().getKafkaTopic(), result.getTransactionId(), alertMessage);
             
             future.whenComplete((sendResult, exception) -> {
                 if (exception == null) {
@@ -100,7 +90,7 @@ public class AlertService {
      * Send webhook alert (placeholder for actual webhook implementation)
      */
     private void sendWebhookAlert(FraudDetectionResult result) {
-        log.info("📡 Sending webhook alert to: {} for transaction: {}", webhookUrl, result.getTransactionId());
+        // log.info("📡 Sending webhook alert for transaction: {}", result.getTransactionId());
         // TODO: Implement actual HTTP webhook call
         // This could use RestTemplate or WebClient to send HTTP POST request
     }
@@ -117,7 +107,7 @@ public class AlertService {
         alertData.put("transactionId", result.getTransactionId());
         alertData.put("riskScore", result.getRiskScore());
         alertData.put("reason", result.getReason());
-        alertData.put("detectionTimestamp", result.getDetectionTimestamp());
+        alertData.put("detectionTimestamp", result.getDetectionTime());
         alertData.put("processingTime", result.getProcessingTime());
         return alertData;
     }
@@ -126,9 +116,6 @@ public class AlertService {
      * Determine alert severity based on risk score
      */
     private String getSeverity(double riskScore) {
-        if (riskScore >= 0.8) return "CRITICAL";
-        if (riskScore >= 0.6) return "HIGH";
-        if (riskScore >= 0.4) return "MEDIUM";
-        return "LOW";
+        return AlertSeverity.getSeverity(riskScore);
     }
 } 

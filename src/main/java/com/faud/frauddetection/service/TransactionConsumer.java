@@ -3,7 +3,6 @@ package com.faud.frauddetection.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.faud.frauddetection.dto.Transaction;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
@@ -17,7 +16,6 @@ public class TransactionConsumer {
     private final FraudDetectionService fraudDetectionService;
     private final ObjectMapper objectMapper;
 
-    @Autowired
     public TransactionConsumer(FraudDetectionService fraudDetectionService) {
         this.fraudDetectionService = fraudDetectionService;
         this.objectMapper = new ObjectMapper();

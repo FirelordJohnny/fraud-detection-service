@@ -3,7 +3,6 @@
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.faud.frauddetection.dto.Transaction;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
@@ -11,18 +10,17 @@ import org.springframework.stereotype.Service;
  * Kafka Transaction Message Consumer
  */
 @Service
-<span class="nc" id="L14">@Slf4j</span>
+<span class="nc" id="L13">@Slf4j</span>
 public class TransactionConsumer {
 
     private final FraudDetectionService fraudDetectionService;
     private final ObjectMapper objectMapper;
 
-    @Autowired
-<span class="nc" id="L21">    public TransactionConsumer(FraudDetectionService fraudDetectionService) {</span>
-<span class="nc" id="L22">        this.fraudDetectionService = fraudDetectionService;</span>
-<span class="nc" id="L23">        this.objectMapper = new ObjectMapper();</span>
-<span class="nc" id="L24">        this.objectMapper.findAndRegisterModules(); // To handle LocalDateTime</span>
-<span class="nc" id="L25">    }</span>
+<span class="nc" id="L19">    public TransactionConsumer(FraudDetectionService fraudDetectionService) {</span>
+<span class="nc" id="L20">        this.fraudDetectionService = fraudDetectionService;</span>
+<span class="nc" id="L21">        this.objectMapper = new ObjectMapper();</span>
+<span class="nc" id="L22">        this.objectMapper.findAndRegisterModules(); // To handle LocalDateTime</span>
+<span class="nc" id="L23">    }</span>
 
     /**
      * Consume transaction messages
@@ -30,12 +28,12 @@ public class TransactionConsumer {
     @KafkaListener(topics = &quot;transactions&quot;, groupId = &quot;fraud-detection-group&quot;)
     public void consume(String message) {
         try {
-<span class="nc" id="L33">            Transaction transaction = objectMapper.readValue(message, Transaction.class);</span>
-<span class="nc" id="L34">            log.info(&quot;Consumed transaction: {}&quot;, transaction.getTransactionId());</span>
-<span class="nc" id="L35">            fraudDetectionService.detectFraud(transaction);</span>
-<span class="nc" id="L36">        } catch (Exception e) {</span>
-<span class="nc" id="L37">            log.error(&quot;Error processing message from Kafka: {}&quot;, message, e);</span>
-<span class="nc" id="L38">        }</span>
-<span class="nc" id="L39">    }</span>
+<span class="nc" id="L31">            Transaction transaction = objectMapper.readValue(message, Transaction.class);</span>
+<span class="nc" id="L32">            log.info(&quot;Consumed transaction: {}&quot;, transaction.getTransactionId());</span>
+<span class="nc" id="L33">            fraudDetectionService.detectFraud(transaction);</span>
+<span class="nc" id="L34">        } catch (Exception e) {</span>
+<span class="nc" id="L35">            log.error(&quot;Error processing message from Kafka: {}&quot;, message, e);</span>
+        }
+<span class="nc" id="L37">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

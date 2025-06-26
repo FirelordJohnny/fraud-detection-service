@@ -3,7 +3,6 @@ package com.faud.frauddetection.repository.impl;
 import com.faud.frauddetection.entity.FraudDetectionResultEntity;
 import com.faud.frauddetection.mapper.FraudDetectionResultMapper;
 import com.faud.frauddetection.repository.FraudDetectionResultRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -14,7 +13,6 @@ public class FraudDetectionResultRepositoryImpl implements FraudDetectionResultR
 
     private final FraudDetectionResultMapper resultMapper;
 
-    @Autowired
     public FraudDetectionResultRepositoryImpl(FraudDetectionResultMapper resultMapper) {
         this.resultMapper = resultMapper;
     }

@@ -3,7 +3,6 @@
 import com.faud.frauddetection.entity.FraudRule;
 import com.faud.frauddetection.repository.FraudRuleRepository;
 import com.faud.frauddetection.service.FraudRuleService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -14,49 +13,59 @@ import java.util.Optional;
  * Implementation of Fraud Rule Service
  */
 @Service
-<span class="nc" id="L17">public class FraudRuleServiceImpl implements FraudRuleService {</span>
+public class FraudRuleServiceImpl implements FraudRuleService {
 
-    @Autowired
-    private FraudRuleRepository fraudRuleRepository;
+    private final FraudRuleRepository fraudRuleRepository;
+    
+<span class="fc" id="L20">    public FraudRuleServiceImpl(FraudRuleRepository fraudRuleRepository) {</span>
+<span class="fc" id="L21">        this.fraudRuleRepository = fraudRuleRepository;</span>
+<span class="fc" id="L22">    }</span>
 
     @Override
     public FraudRule createFraudRule(FraudRule fraudRule) {
-<span class="nc" id="L24">        fraudRule.setCreatedAt(LocalDateTime.now());</span>
-<span class="nc" id="L25">        fraudRule.setUpdatedAt(LocalDateTime.now());</span>
-<span class="nc" id="L26">        fraudRuleRepository.save(fraudRule);</span>
-<span class="nc" id="L27">        return fraudRule;</span>
+<span class="fc" id="L26">        fraudRule.setCreatedAt(LocalDateTime.now());</span>
+<span class="fc" id="L27">        fraudRule.setUpdatedAt(LocalDateTime.now());</span>
+<span class="fc" id="L28">        fraudRuleRepository.save(fraudRule);</span>
+<span class="fc" id="L29">        return fraudRule;</span>
     }
 
     @Override
     public Optional&lt;FraudRule&gt; getFraudRuleById(Long id) {
-<span class="nc" id="L32">        return fraudRuleRepository.findById(id);</span>
+<span class="fc" id="L34">        return fraudRuleRepository.findById(id);</span>
     }
 
     @Override
     public List&lt;FraudRule&gt; getAllFraudRules() {
-<span class="nc" id="L37">        return fraudRuleRepository.findAll();</span>
+<span class="fc" id="L39">        return fraudRuleRepository.findAll();</span>
+    }
+
+    @Override
+    public List&lt;FraudRule&gt; getActiveRules() {
+<span class="fc" id="L44">        return fraudRuleRepository.findAll().stream()</span>
+<span class="pc bpc" id="L45" title="1 of 4 branches missed.">            .filter(rule -&gt; rule.getEnabled() != null &amp;&amp; rule.getEnabled())</span>
+<span class="fc" id="L46">            .toList();</span>
     }
 
     @Override
     public FraudRule updateFraudRule(Long id, FraudRule fraudRuleDetails) {
-<span class="nc" id="L42">        FraudRule existingRule = fraudRuleRepository.findById(id)</span>
-<span class="nc" id="L43">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Fraud rule with id &quot; + id + &quot; not found&quot;));</span>
+<span class="fc" id="L51">        FraudRule existingRule = fraudRuleRepository.findById(id)</span>
+<span class="fc" id="L52">                .orElseThrow(() -&gt; new IllegalArgumentException(&quot;Fraud rule with id &quot; + id + &quot; not found&quot;));</span>
         // Update fields
-<span class="nc" id="L45">        existingRule.setRuleName(fraudRuleDetails.getRuleName());</span>
-<span class="nc" id="L46">        existingRule.setRuleType(fraudRuleDetails.getRuleType());</span>
-<span class="nc" id="L47">        existingRule.setDescription(fraudRuleDetails.getDescription());</span>
-<span class="nc" id="L48">        existingRule.setRuleConfig(fraudRuleDetails.getRuleConfig());</span>
-<span class="nc" id="L49">        existingRule.setEnabled(fraudRuleDetails.getEnabled());</span>
-<span class="nc" id="L50">        existingRule.setThresholdValue(fraudRuleDetails.getThresholdValue());</span>
-<span class="nc" id="L51">        existingRule.setUpdatedAt(LocalDateTime.now());</span>
+<span class="fc" id="L54">        existingRule.setRuleName(fraudRuleDetails.getRuleName());</span>
+<span class="fc" id="L55">        existingRule.setRuleType(fraudRuleDetails.getRuleType());</span>
+<span class="fc" id="L56">        existingRule.setDescription(fraudRuleDetails.getDescription());</span>
+<span class="fc" id="L57">        existingRule.setRuleConfig(fraudRuleDetails.getRuleConfig());</span>
+<span class="fc" id="L58">        existingRule.setEnabled(fraudRuleDetails.getEnabled());</span>
+<span class="fc" id="L59">        existingRule.setThresholdValue(fraudRuleDetails.getThresholdValue());</span>
+<span class="fc" id="L60">        existingRule.setUpdatedAt(LocalDateTime.now());</span>
 
-<span class="nc" id="L53">        fraudRuleRepository.update(existingRule);</span>
-<span class="nc" id="L54">        return existingRule;</span>
+<span class="fc" id="L62">        fraudRuleRepository.update(existingRule);</span>
+<span class="fc" id="L63">        return existingRule;</span>
     }
 
     @Override
     public void deleteFraudRule(Long id) {
-<span class="nc" id="L59">        fraudRuleRepository.delete(id);</span>
-<span class="nc" id="L60">    }</span>
+<span class="fc" id="L68">        fraudRuleRepository.delete(id);</span>
+<span class="fc" id="L69">    }</span>
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -6,7 +6,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -23,52 +22,55 @@ import java.util.stream.Collectors;
  * JWT Authentication Filter
  */
 @Component
-<span class="fc" id="L26">public class JwtAuthenticationFilter extends OncePerRequestFilter {</span>
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-<span class="fc" id="L28">    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);</span>
+<span class="fc" id="L27">    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);</span>
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    private final JwtUtil jwtUtil;
+    
+<span class="fc" id="L31">    public JwtAuthenticationFilter(JwtUtil jwtUtil) {</span>
+<span class="fc" id="L32">        this.jwtUtil = jwtUtil;</span>
+<span class="fc" id="L33">    }</span>
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, 
                                   FilterChain filterChain) throws ServletException, IOException {
         try {
-<span class="nc" id="L37">            String jwt = getJwtFromRequest(request);</span>
+<span class="fc" id="L39">            String jwt = getJwtFromRequest(request);</span>
 
-<span class="nc bnc" id="L39" title="All 2 branches missed.">            if (StringUtils.hasText(jwt)) {</span>
-<span class="nc" id="L40">                String username = jwtUtil.getUsernameFromToken(jwt);</span>
-<span class="nc" id="L41">                String userId = jwtUtil.getUserIdFromToken(jwt);</span>
-<span class="nc" id="L42">                List&lt;String&gt; roles = jwtUtil.getRolesFromToken(jwt);</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">            if (StringUtils.hasText(jwt)) {</span>
+<span class="fc" id="L42">                String username = jwtUtil.getUsernameFromToken(jwt);</span>
+<span class="fc" id="L43">                String userId = jwtUtil.getUserIdFromToken(jwt);</span>
+<span class="fc" id="L44">                List&lt;String&gt; roles = jwtUtil.getRolesFromToken(jwt);</span>
 
-<span class="nc bnc" id="L44" title="All 4 branches missed.">                if (username != null &amp;&amp; SecurityContextHolder.getContext().getAuthentication() == null) {</span>
-<span class="nc bnc" id="L45" title="All 2 branches missed.">                    if (jwtUtil.validateToken(jwt, username)) {</span>
-<span class="nc" id="L46">                        List&lt;GrantedAuthority&gt; authorities = roles.stream()</span>
-<span class="nc" id="L47">                                .map(SimpleGrantedAuthority::new)</span>
-<span class="nc" id="L48">                                .collect(Collectors.toList());</span>
+<span class="pc bpc" id="L46" title="1 of 4 branches missed.">                if (username != null &amp;&amp; SecurityContextHolder.getContext().getAuthentication() == null) {</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">                    if (jwtUtil.validateToken(jwt, username)) {</span>
+<span class="fc" id="L48">                        List&lt;GrantedAuthority&gt; authorities = roles.stream()</span>
+<span class="fc" id="L49">                                .map(SimpleGrantedAuthority::new)</span>
+<span class="fc" id="L50">                                .collect(Collectors.toList());</span>
 
-<span class="nc" id="L50">                        UserPrincipal userPrincipal = new UserPrincipal(username, userId, authorities);</span>
-<span class="nc" id="L51">                        UsernamePasswordAuthenticationToken authentication = </span>
+<span class="fc" id="L52">                        UserPrincipal userPrincipal = new UserPrincipal(username, userId, authorities);</span>
+<span class="fc" id="L53">                        UsernamePasswordAuthenticationToken authentication = </span>
                                 new UsernamePasswordAuthenticationToken(userPrincipal, null, authorities);
                         
-<span class="nc" id="L54">                        SecurityContextHolder.getContext().setAuthentication(authentication);</span>
-<span class="nc" id="L55">                        logger.debug(&quot;Set Authentication for user: {} with userId: {}&quot;, username, userId);</span>
+<span class="fc" id="L56">                        SecurityContextHolder.getContext().setAuthentication(authentication);</span>
+<span class="fc" id="L57">                        logger.debug(&quot;Set Authentication for user: {} with userId: {}&quot;, username, userId);</span>
                     }
                 }
             }
-<span class="nc" id="L59">        } catch (Exception ex) {</span>
-<span class="nc" id="L60">            logger.error(&quot;Could not set user authentication in security context&quot;, ex);</span>
-<span class="nc" id="L61">        }</span>
+<span class="fc" id="L61">        } catch (Exception ex) {</span>
+<span class="fc" id="L62">            logger.error(&quot;Could not set user authentication in security context&quot;, ex);</span>
+<span class="fc" id="L63">        }</span>
 
-<span class="nc" id="L63">        filterChain.doFilter(request, response);</span>
-<span class="nc" id="L64">    }</span>
+<span class="fc" id="L65">        filterChain.doFilter(request, response);</span>
+<span class="fc" id="L66">    }</span>
 
     private String getJwtFromRequest(HttpServletRequest request) {
-<span class="nc" id="L67">        String bearerToken = request.getHeader(&quot;Authorization&quot;);</span>
-<span class="nc bnc" id="L68" title="All 4 branches missed.">        if (StringUtils.hasText(bearerToken) &amp;&amp; bearerToken.startsWith(&quot;Bearer &quot;)) {</span>
-<span class="nc" id="L69">            return bearerToken.substring(7);</span>
+<span class="fc" id="L69">        String bearerToken = request.getHeader(&quot;Authorization&quot;);</span>
+<span class="fc bfc" id="L70" title="All 4 branches covered.">        if (StringUtils.hasText(bearerToken) &amp;&amp; bearerToken.startsWith(&quot;Bearer &quot;)) {</span>
+<span class="fc" id="L71">            return bearerToken.substring(7);</span>
         }
-<span class="nc" id="L71">        return null;</span>
+<span class="fc" id="L73">        return null;</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

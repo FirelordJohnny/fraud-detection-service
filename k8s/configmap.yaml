@@ -14,7 +14,7 @@ data:
       application:
         name: fraud-detection-service
       
-      # PostgreSQL数据库配置
+      # PostgreSQL database configuration
       datasource:
         url: jdbc:postgresql://postgres-service:5432/frauddb
         driver-class-name: org.postgresql.Driver
@@ -39,7 +39,7 @@ data:
             order_inserts: true
             order_updates: true
       
-      # Kafka集群配置
+      # Kafka cluster configuration
       kafka:
         bootstrap-servers: ${KAFKA_BROKERS}
         consumer:
@@ -56,7 +56,7 @@ data:
           retries: 3
           acks: all
 
-    # 管理端点配置
+    # Management endpoint configuration
     management:
       endpoints:
         web:
@@ -70,7 +70,7 @@ data:
           export:
             enabled: true
 
-    # 欺诈检测配置
+    # Fraud detection configuration
     fraud:
       detection:
         amount:
@@ -87,7 +87,7 @@ data:
       alert:
         enabled: true
 
-    # 日志配置
+    # Logging configuration
     logging:
       level:
         com.faud.frauddetection: INFO

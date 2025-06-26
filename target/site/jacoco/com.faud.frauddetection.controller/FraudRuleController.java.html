@@ -4,7 +4,6 @@ import com.faud.frauddetection.dto.FraudRuleDto;
 import com.faud.frauddetection.entity.FraudRule;
 import com.faud.frauddetection.service.FraudRuleService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -20,26 +19,25 @@ import java.util.List;
  */
 @RestController
 @RequestMapping(&quot;/api/v1/fraud-rules&quot;)
-<span class="fc" id="L23">@Slf4j</span>
+<span class="fc" id="L22">@Slf4j</span>
 @Validated
 public class FraudRuleController {
 
     private final FraudRuleService fraudRuleService;
 
-    @Autowired
-<span class="fc" id="L30">    public FraudRuleController(FraudRuleService fraudRuleService) {</span>
-<span class="fc" id="L31">        this.fraudRuleService = fraudRuleService;</span>
-<span class="fc" id="L32">    }</span>
+<span class="fc" id="L28">    public FraudRuleController(FraudRuleService fraudRuleService) {</span>
+<span class="fc" id="L29">        this.fraudRuleService = fraudRuleService;</span>
+<span class="fc" id="L30">    }</span>
 
     /**
      * Get all fraud rules
      */
     @GetMapping
     public ResponseEntity&lt;List&lt;FraudRule&gt;&gt; getAllRules() {
-<span class="nc" id="L39">        log.info(&quot;Getting all fraud rules&quot;);</span>
-<span class="nc" id="L40">        List&lt;FraudRule&gt; rules = fraudRuleService.getAllFraudRules();</span>
-<span class="nc" id="L41">        log.info(&quot;Returning {} rules&quot;, rules.size());</span>
-<span class="nc" id="L42">        return ResponseEntity.ok(rules);</span>
+<span class="fc" id="L37">        log.info(&quot;Getting all fraud rules&quot;);</span>
+<span class="fc" id="L38">        List&lt;FraudRule&gt; rules = fraudRuleService.getAllFraudRules();</span>
+<span class="fc" id="L39">        log.info(&quot;Returning {} rules&quot;, rules.size());</span>
+<span class="fc" id="L40">        return ResponseEntity.ok(rules);</span>
     }
 
     /**
@@ -47,13 +45,13 @@ public class FraudRuleController {
      */
     @GetMapping(&quot;/{id}&quot;)
     public ResponseEntity&lt;FraudRule&gt; getRuleById(@PathVariable Long id) {
-<span class="nc" id="L50">        log.info(&quot;Getting rule ID: {}&quot;, id);</span>
-<span class="nc" id="L51">        return fraudRuleService.getFraudRuleById(id)</span>
-<span class="nc" id="L52">                .map(rule -&gt; {</span>
-<span class="nc" id="L53">                    log.info(&quot;Found rule: {}&quot;, rule.getRuleName());</span>
-<span class="nc" id="L54">                    return ResponseEntity.ok(rule);</span>
+<span class="fc" id="L48">        log.info(&quot;Getting rule ID: {}&quot;, id);</span>
+<span class="fc" id="L49">        return fraudRuleService.getFraudRuleById(id)</span>
+<span class="fc" id="L50">                .map(rule -&gt; {</span>
+<span class="fc" id="L51">                    log.info(&quot;Found rule: {}&quot;, rule.getRuleName());</span>
+<span class="fc" id="L52">                    return ResponseEntity.ok(rule);</span>
                 })
-<span class="nc" id="L56">                .orElse(ResponseEntity.notFound().build());</span>
+<span class="fc" id="L54">                .orElse(ResponseEntity.notFound().build());</span>
     }
 
     /**
@@ -61,13 +59,13 @@ public class FraudRuleController {
      */
     @PostMapping
     public ResponseEntity&lt;FraudRule&gt; createRule(@Valid @RequestBody FraudRuleDto ruleDto) {
-<span class="nc" id="L64">        log.info(&quot;Creating new rule: {}&quot;, ruleDto.getRuleName());</span>
+<span class="fc" id="L62">        log.info(&quot;Creating new rule: {}&quot;, ruleDto.getRuleName());</span>
         
-<span class="nc" id="L66">        FraudRule rule = convertToEntity(ruleDto);</span>
-<span class="nc" id="L67">        FraudRule savedRule = fraudRuleService.createFraudRule(rule);</span>
+<span class="fc" id="L64">        FraudRule rule = convertToEntity(ruleDto);</span>
+<span class="fc" id="L65">        FraudRule savedRule = fraudRuleService.createFraudRule(rule);</span>
         
-<span class="nc" id="L69">        log.info(&quot;Successfully created rule with ID: {}&quot;, savedRule.getId());</span>
-<span class="nc" id="L70">        return ResponseEntity.status(HttpStatus.CREATED).body(savedRule);</span>
+<span class="fc" id="L67">        log.info(&quot;Successfully created rule with ID: {}&quot;, savedRule.getId());</span>
+<span class="fc" id="L68">        return ResponseEntity.status(HttpStatus.CREATED).body(savedRule);</span>
     }
 
     /**
@@ -75,13 +73,13 @@ public class FraudRuleController {
      */
     @PutMapping(&quot;/{id}&quot;)
     public ResponseEntity&lt;FraudRule&gt; updateRule(@PathVariable Long id, @Valid @RequestBody FraudRuleDto ruleDto) {
-<span class="nc" id="L78">        log.info(&quot;Updating rule ID: {}&quot;, id);</span>
+<span class="fc" id="L76">        log.info(&quot;Updating rule ID: {}&quot;, id);</span>
         
-<span class="nc" id="L80">        FraudRule rule = convertToEntity(ruleDto);</span>
-<span class="nc" id="L81">        FraudRule updatedRule = fraudRuleService.updateFraudRule(id, rule);</span>
+<span class="fc" id="L78">        FraudRule rule = convertToEntity(ruleDto);</span>
+<span class="fc" id="L79">        FraudRule updatedRule = fraudRuleService.updateFraudRule(id, rule);</span>
         
-<span class="nc" id="L83">        log.info(&quot;Successfully updated rule: {}&quot;, updatedRule.getRuleName());</span>
-<span class="nc" id="L84">        return ResponseEntity.ok(updatedRule);</span>
+<span class="fc" id="L81">        log.info(&quot;Successfully updated rule: {}&quot;, updatedRule.getRuleName());</span>
+<span class="fc" id="L82">        return ResponseEntity.ok(updatedRule);</span>
     }
 
     /**
@@ -89,10 +87,10 @@ public class FraudRuleController {
      */
     @DeleteMapping(&quot;/{id}&quot;)
     public ResponseEntity&lt;Void&gt; deleteRule(@PathVariable Long id) {
-<span class="nc" id="L92">        log.info(&quot;Deleting rule ID: {}&quot;, id);</span>
-<span class="nc" id="L93">        fraudRuleService.deleteFraudRule(id);</span>
-<span class="nc" id="L94">        log.info(&quot;Successfully deleted rule ID: {}&quot;, id);</span>
-<span class="nc" id="L95">        return ResponseEntity.noContent().build();</span>
+<span class="fc" id="L90">        log.info(&quot;Deleting rule ID: {}&quot;, id);</span>
+<span class="fc" id="L91">        fraudRuleService.deleteFraudRule(id);</span>
+<span class="fc" id="L92">        log.info(&quot;Successfully deleted rule ID: {}&quot;, id);</span>
+<span class="fc" id="L93">        return ResponseEntity.noContent().build();</span>
     }
 
     /**
@@ -100,16 +98,16 @@ public class FraudRuleController {
      */
     @PatchMapping(&quot;/{id}/toggle&quot;)
     public ResponseEntity&lt;FraudRule&gt; toggleRule(@PathVariable Long id) {
-<span class="nc" id="L103">        log.info(&quot;Toggling rule status, ID: {}&quot;, id);</span>
+<span class="fc" id="L101">        log.info(&quot;Toggling rule status, ID: {}&quot;, id);</span>
         
-<span class="nc" id="L105">        return fraudRuleService.getFraudRuleById(id)</span>
-<span class="nc" id="L106">                .map(existingRule -&gt; {</span>
-<span class="nc bnc" id="L107" title="All 2 branches missed.">                    existingRule.setEnabled(!existingRule.getEnabled());</span>
-<span class="nc" id="L108">                    FraudRule updatedRule = fraudRuleService.updateFraudRule(id, existingRule);</span>
-<span class="nc" id="L109">                    log.info(&quot;Rule {} status toggled to: {}&quot;, updatedRule.getRuleName(), updatedRule.getEnabled());</span>
-<span class="nc" id="L110">                    return ResponseEntity.ok(updatedRule);</span>
+<span class="fc" id="L103">        return fraudRuleService.getFraudRuleById(id)</span>
+<span class="fc" id="L104">                .map(existingRule -&gt; {</span>
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">                    existingRule.setEnabled(!existingRule.getEnabled());</span>
+<span class="fc" id="L106">                    FraudRule updatedRule = fraudRuleService.updateFraudRule(id, existingRule);</span>
+<span class="fc" id="L107">                    log.info(&quot;Rule {} status toggled to: {}&quot;, updatedRule.getRuleName(), updatedRule.getEnabled());</span>
+<span class="fc" id="L108">                    return ResponseEntity.ok(updatedRule);</span>
                 })
-<span class="nc" id="L112">                .orElse(ResponseEntity.notFound().build());</span>
+<span class="fc" id="L110">                .orElse(ResponseEntity.notFound().build());</span>
     }
 
     /**
@@ -122,54 +120,54 @@ public class FraudRuleController {
             @RequestParam BigDecimal threshold,
             @RequestParam(required = false) String description) {
         
-<span class="nc" id="L125">        log.info(&quot;Quick creating rule: {} (type: {})&quot;, ruleName, ruleType);</span>
+<span class="fc" id="L123">        log.info(&quot;Quick creating rule: {} (type: {})&quot;, ruleName, ruleType);</span>
         
-<span class="nc" id="L127">        FraudRule rule = FraudRule.builder()</span>
-<span class="nc" id="L128">                .ruleName(ruleName)</span>
-<span class="nc" id="L129">                .ruleType(ruleType.toUpperCase())</span>
-<span class="nc bnc" id="L130" title="All 2 branches missed.">                .description(description != null ? description : &quot;Quick created &quot; + ruleType + &quot; rule&quot;)</span>
-<span class="nc" id="L131">                .thresholdValue(threshold)</span>
-<span class="nc" id="L132">                .enabled(true)</span>
-<span class="nc" id="L133">                .riskWeight(getDefaultRiskWeight(ruleType))</span>
-<span class="nc" id="L134">                .priority(1)</span>
-<span class="nc" id="L135">                .build();</span>
+<span class="fc" id="L125">        FraudRule rule = FraudRule.builder()</span>
+<span class="fc" id="L126">                .ruleName(ruleName)</span>
+<span class="fc" id="L127">                .ruleType(ruleType.toUpperCase())</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">                .description(description != null ? description : &quot;Quick created &quot; + ruleType + &quot; rule&quot;)</span>
+<span class="fc" id="L129">                .thresholdValue(threshold)</span>
+<span class="fc" id="L130">                .enabled(true)</span>
+<span class="fc" id="L131">                .riskWeight(getDefaultRiskWeight(ruleType))</span>
+<span class="fc" id="L132">                .priority(1)</span>
+<span class="fc" id="L133">                .build();</span>
         
-<span class="nc" id="L137">        FraudRule savedRule = fraudRuleService.createFraudRule(rule);</span>
-<span class="nc" id="L138">        log.info(&quot;Quick create rule successful, ID: {}&quot;, savedRule.getId());</span>
+<span class="fc" id="L135">        FraudRule savedRule = fraudRuleService.createFraudRule(rule);</span>
+<span class="fc" id="L136">        log.info(&quot;Quick create rule successful, ID: {}&quot;, savedRule.getId());</span>
         
-<span class="nc" id="L140">        return ResponseEntity.status(HttpStatus.CREATED).body(savedRule);</span>
+<span class="fc" id="L138">        return ResponseEntity.status(HttpStatus.CREATED).body(savedRule);</span>
     }
 
     /**
      * Convert DTO to entity
      */
     private FraudRule convertToEntity(FraudRuleDto dto) {
-<span class="nc" id="L147">        return FraudRule.builder()</span>
-<span class="nc" id="L148">                .ruleName(dto.getRuleName())</span>
-<span class="nc" id="L149">                .ruleType(dto.getRuleType())</span>
-<span class="nc" id="L150">                .description(dto.getDescription())</span>
-<span class="nc" id="L151">                .ruleConfig(dto.getRuleConfig())</span>
-<span class="nc" id="L152">                .enabled(dto.getEnabled())</span>
-<span class="nc" id="L153">                .thresholdValue(dto.getThresholdValue())</span>
-<span class="nc" id="L154">                .conditionField(dto.getConditionField())</span>
-<span class="nc" id="L155">                .conditionOperator(dto.getConditionOperator())</span>
-<span class="nc" id="L156">                .conditionValue(dto.getConditionValue())</span>
-<span class="nc bnc" id="L157" title="All 2 branches missed.">                .riskWeight(dto.getRiskWeight() != null ? dto.getRiskWeight() : getDefaultRiskWeight(dto.getRuleType()))</span>
-<span class="nc bnc" id="L158" title="All 2 branches missed.">                .priority(dto.getPriority() != null ? dto.getPriority() : 1)</span>
-<span class="nc" id="L159">                .build();</span>
+<span class="fc" id="L145">        return FraudRule.builder()</span>
+<span class="fc" id="L146">                .ruleName(dto.getRuleName())</span>
+<span class="fc" id="L147">                .ruleType(dto.getRuleType())</span>
+<span class="fc" id="L148">                .description(dto.getDescription())</span>
+<span class="fc" id="L149">                .ruleConfig(dto.getRuleConfig())</span>
+<span class="fc" id="L150">                .enabled(dto.getEnabled())</span>
+<span class="fc" id="L151">                .thresholdValue(dto.getThresholdValue())</span>
+<span class="fc" id="L152">                .conditionField(dto.getConditionField())</span>
+<span class="fc" id="L153">                .conditionOperator(dto.getConditionOperator())</span>
+<span class="fc" id="L154">                .conditionValue(dto.getConditionValue())</span>
+<span class="fc bfc" id="L155" title="All 2 branches covered.">                .riskWeight(dto.getRiskWeight() != null ? dto.getRiskWeight() : getDefaultRiskWeight(dto.getRuleType()))</span>
+<span class="fc bfc" id="L156" title="All 2 branches covered.">                .priority(dto.getPriority() != null ? dto.getPriority() : 1)</span>
+<span class="fc" id="L157">                .build();</span>
     }
 
     /**
      * Get default risk weight for rule type
      */
     private BigDecimal getDefaultRiskWeight(String ruleType) {
-<span class="nc bnc" id="L166" title="All 6 branches missed.">        return switch (ruleType.toUpperCase()) {</span>
-<span class="nc" id="L167">            case &quot;AMOUNT&quot; -&gt; BigDecimal.valueOf(0.30);</span>
-<span class="nc" id="L168">            case &quot;FREQUENCY&quot; -&gt; BigDecimal.valueOf(0.25);</span>
-<span class="nc" id="L169">            case &quot;TIME_OF_DAY&quot; -&gt; BigDecimal.valueOf(0.15);</span>
-<span class="nc" id="L170">            case &quot;IP_BLACKLIST&quot; -&gt; BigDecimal.valueOf(0.40);</span>
-<span class="nc" id="L171">            case &quot;CUSTOM&quot; -&gt; BigDecimal.valueOf(0.20);</span>
-<span class="nc" id="L172">            default -&gt; BigDecimal.valueOf(0.20);</span>
+<span class="fc bfc" id="L164" title="All 6 branches covered.">        return switch (ruleType.toUpperCase()) {</span>
+<span class="fc" id="L165">            case &quot;AMOUNT&quot; -&gt; BigDecimal.valueOf(0.30);</span>
+<span class="fc" id="L166">            case &quot;FREQUENCY&quot; -&gt; BigDecimal.valueOf(0.25);</span>
+<span class="fc" id="L167">            case &quot;TIME_OF_DAY&quot; -&gt; BigDecimal.valueOf(0.15);</span>
+<span class="fc" id="L168">            case &quot;IP_BLACKLIST&quot; -&gt; BigDecimal.valueOf(0.40);</span>
+<span class="fc" id="L169">            case &quot;CUSTOM&quot; -&gt; BigDecimal.valueOf(0.20);</span>
+<span class="fc" id="L170">            default -&gt; BigDecimal.valueOf(0.20);</span>
         };
     }
 } 

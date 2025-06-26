@@ -13,8 +13,14 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: none  # Let the schema script handle table creation
     show-sql: true
+  
+  # SQL initialization for tests
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/migration/V1__Initial_Schema.sql
   
   # H2 console
   h2:

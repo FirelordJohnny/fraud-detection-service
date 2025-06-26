@@ -8,11 +8,11 @@
         <result property="isFraud" column="is_fraud"/>
         <result property="riskScore" column="risk_score"/>
         <result property="reason" column="reason"/>
-        <result property="detectionTimestamp" column="detection_timestamp"/>
+        <result property="detectionTimestamp" column="detected_at"/>
     </resultMap>
 
     <insert id="insert" parameterType="com.faud.frauddetection.entity.FraudDetectionResultEntity" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO fraud_detection_results (transaction_id, is_fraud, risk_score, reason, detection_timestamp)
+        INSERT INTO fraud_detection_results (transaction_id, is_fraud, risk_score, reason, detected_at)
         VALUES (#{transactionId}, #{isFraud}, #{riskScore}, #{reason}, #{detectionTimestamp})
     </insert>
 
@@ -21,7 +21,7 @@
     </select>
 
     <select id="findAll" resultMap="FraudDetectionResultMap">
-        SELECT * FROM fraud_detection_results ORDER BY detection_timestamp DESC
+        SELECT * FROM fraud_detection_results ORDER BY detected_at DESC
     </select>
 
     <update id="updateStatus">

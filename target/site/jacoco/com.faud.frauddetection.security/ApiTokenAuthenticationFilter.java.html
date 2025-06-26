@@ -33,67 +33,67 @@ import java.util.List;
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, 
                                   FilterChain filterChain) throws ServletException, IOException {
         
-<span class="nc" id="L36">        String requestPath = request.getRequestURI();</span>
+<span class="fc" id="L36">        String requestPath = request.getRequestURI();</span>
         
         // Only apply to internal API paths
-<span class="nc bnc" id="L39" title="All 2 branches missed.">        if (!requestPath.startsWith(&quot;/internal/&quot;)) {</span>
-<span class="nc" id="L40">            filterChain.doFilter(request, response);</span>
-<span class="nc" id="L41">            return;</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        if (!requestPath.startsWith(&quot;/internal/&quot;)) {</span>
+<span class="fc" id="L40">            filterChain.doFilter(request, response);</span>
+<span class="fc" id="L41">            return;</span>
         }
 
         try {
-<span class="nc" id="L45">            String apiToken = getApiTokenFromRequest(request);</span>
+<span class="fc" id="L45">            String apiToken = getApiTokenFromRequest(request);</span>
 
-<span class="nc bnc" id="L47" title="All 4 branches missed.">            if (StringUtils.hasText(apiToken) &amp;&amp; validateApiToken(apiToken)) {</span>
+<span class="fc bfc" id="L47" title="All 4 branches covered.">            if (StringUtils.hasText(apiToken) &amp;&amp; validateApiToken(apiToken)) {</span>
                 // Create authentication for internal API access
-<span class="nc" id="L49">                List&lt;SimpleGrantedAuthority&gt; authorities = Arrays.asList(</span>
+<span class="fc" id="L49">                List&lt;SimpleGrantedAuthority&gt; authorities = Arrays.asList(</span>
                     new SimpleGrantedAuthority(&quot;ROLE_INTERNAL_API&quot;),
                     new SimpleGrantedAuthority(&quot;ROLE_ADMIN&quot;)
                 );
 
-<span class="nc" id="L54">                UserPrincipal userPrincipal = new UserPrincipal(&quot;internal-api&quot;, &quot;system&quot;, authorities);</span>
-<span class="nc" id="L55">                UsernamePasswordAuthenticationToken authentication = </span>
+<span class="fc" id="L54">                UserPrincipal userPrincipal = new UserPrincipal(&quot;internal-api&quot;, &quot;system&quot;, authorities);</span>
+<span class="fc" id="L55">                UsernamePasswordAuthenticationToken authentication = </span>
                         new UsernamePasswordAuthenticationToken(userPrincipal, null, authorities);
                 
-<span class="nc" id="L58">                SecurityContextHolder.getContext().setAuthentication(authentication);</span>
-<span class="nc" id="L59">                logger.debug(&quot;Set internal API authentication&quot;);</span>
+<span class="fc" id="L58">                SecurityContextHolder.getContext().setAuthentication(authentication);</span>
+<span class="fc" id="L59">                logger.debug(&quot;Set internal API authentication&quot;);</span>
                 
-<span class="nc" id="L61">            } else {</span>
-<span class="nc" id="L62">                logger.warn(&quot;Invalid or missing API token for internal API access from IP: {}&quot;, </span>
-<span class="nc" id="L63">                    request.getRemoteAddr());</span>
-<span class="nc" id="L64">                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);</span>
-<span class="nc" id="L65">                response.getWriter().write(&quot;{\&quot;error\&quot;:\&quot;Invalid or missing API token\&quot;}&quot;);</span>
-<span class="nc" id="L66">                return;</span>
+<span class="fc" id="L61">            } else {</span>
+<span class="fc" id="L62">                logger.warn(&quot;Invalid or missing API token for internal API access from IP: {}&quot;, </span>
+<span class="fc" id="L63">                    request.getRemoteAddr());</span>
+<span class="fc" id="L64">                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);</span>
+<span class="fc" id="L65">                response.getWriter().write(&quot;{\&quot;error\&quot;:\&quot;Invalid or missing API token\&quot;}&quot;);</span>
+<span class="fc" id="L66">                return;</span>
             }
 <span class="nc" id="L68">        } catch (Exception ex) {</span>
 <span class="nc" id="L69">            logger.error(&quot;Could not set internal API authentication&quot;, ex);</span>
 <span class="nc" id="L70">            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);</span>
 <span class="nc" id="L71">            response.getWriter().write(&quot;{\&quot;error\&quot;:\&quot;Authentication failed\&quot;}&quot;);</span>
 <span class="nc" id="L72">            return;</span>
-<span class="nc" id="L73">        }</span>
+<span class="fc" id="L73">        }</span>
 
-<span class="nc" id="L75">        filterChain.doFilter(request, response);</span>
-<span class="nc" id="L76">    }</span>
+<span class="fc" id="L75">        filterChain.doFilter(request, response);</span>
+<span class="fc" id="L76">    }</span>
 
     private String getApiTokenFromRequest(HttpServletRequest request) {
         // Check Authorization header
-<span class="nc" id="L80">        String bearerToken = request.getHeader(&quot;Authorization&quot;);</span>
-<span class="nc bnc" id="L81" title="All 4 branches missed.">        if (StringUtils.hasText(bearerToken) &amp;&amp; bearerToken.startsWith(&quot;Bearer &quot;)) {</span>
-<span class="nc" id="L82">            return bearerToken.substring(7);</span>
+<span class="fc" id="L80">        String bearerToken = request.getHeader(&quot;Authorization&quot;);</span>
+<span class="pc bpc" id="L81" title="1 of 4 branches missed.">        if (StringUtils.hasText(bearerToken) &amp;&amp; bearerToken.startsWith(&quot;Bearer &quot;)) {</span>
+<span class="fc" id="L82">            return bearerToken.substring(7);</span>
         }
         
         // Check X-API-Token header
-<span class="nc" id="L86">        String apiToken = request.getHeader(&quot;X-API-Token&quot;);</span>
-<span class="nc bnc" id="L87" title="All 2 branches missed.">        if (StringUtils.hasText(apiToken)) {</span>
-<span class="nc" id="L88">            return apiToken;</span>
+<span class="fc" id="L86">        String apiToken = request.getHeader(&quot;X-API-Token&quot;);</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        if (StringUtils.hasText(apiToken)) {</span>
+<span class="fc" id="L88">            return apiToken;</span>
         }
         
         // Check query parameter
-<span class="nc" id="L92">        return request.getParameter(&quot;apiToken&quot;);</span>
+<span class="fc" id="L92">        return request.getParameter(&quot;apiToken&quot;);</span>
     }
 
     private boolean validateApiToken(String token) {
-<span class="nc" id="L96">        return internalApiToken.equals(token);</span>
+<span class="fc" id="L96">        return internalApiToken.equals(token);</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

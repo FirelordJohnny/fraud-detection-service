@@ -4,7 +4,6 @@ import com.faud.frauddetection.dto.FraudRuleDto;
 import com.faud.frauddetection.entity.FraudRule;
 import com.faud.frauddetection.service.FraudRuleService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -26,7 +25,6 @@ public class FraudRuleController {
 
     private final FraudRuleService fraudRuleService;
 
-    @Autowired
     public FraudRuleController(FraudRuleService fraudRuleService) {
         this.fraudRuleService = fraudRuleService;
     }

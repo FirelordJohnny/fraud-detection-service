@@ -15,7 +15,7 @@ import java.util.List;
  * JWT Utility class for token generation and validation
  */
 @Component
-<span class="nc" id="L18">public class JwtUtil {</span>
+<span class="fc" id="L18">public class JwtUtil {</span>
 
 <span class="fc" id="L20">    private static final Logger logger = LoggerFactory.getLogger(JwtUtil.class);</span>
 
@@ -26,37 +26,37 @@ import java.util.List;
     private int jwtExpiration;
 
     private SecretKey getSigningKey() {
-<span class="nc" id="L29">        return Keys.hmacShaKeyFor(secret.getBytes());</span>
+<span class="fc" id="L29">        return Keys.hmacShaKeyFor(secret.getBytes());</span>
     }
 
     /**
      * Generate JWT token with user information
      */
     public String generateToken(String username, List&lt;String&gt; roles, String userId) {
-<span class="nc" id="L36">        Date expiryDate = new Date(System.currentTimeMillis() + jwtExpiration * 1000L);</span>
+<span class="fc" id="L36">        Date expiryDate = new Date(System.currentTimeMillis() + jwtExpiration * 1000L);</span>
 
-<span class="nc" id="L38">        return Jwts.builder()</span>
-<span class="nc" id="L39">                .setSubject(username)</span>
-<span class="nc" id="L40">                .claim(&quot;roles&quot;, roles)</span>
-<span class="nc" id="L41">                .claim(&quot;userId&quot;, userId)</span>
-<span class="nc" id="L42">                .setIssuedAt(new Date())</span>
-<span class="nc" id="L43">                .setExpiration(expiryDate)</span>
-<span class="nc" id="L44">                .signWith(getSigningKey(), SignatureAlgorithm.HS256)</span>
-<span class="nc" id="L45">                .compact();</span>
+<span class="fc" id="L38">        return Jwts.builder()</span>
+<span class="fc" id="L39">                .setSubject(username)</span>
+<span class="fc" id="L40">                .claim(&quot;roles&quot;, roles)</span>
+<span class="fc" id="L41">                .claim(&quot;userId&quot;, userId)</span>
+<span class="fc" id="L42">                .setIssuedAt(new Date())</span>
+<span class="fc" id="L43">                .setExpiration(expiryDate)</span>
+<span class="fc" id="L44">                .signWith(getSigningKey(), SignatureAlgorithm.HS256)</span>
+<span class="fc" id="L45">                .compact();</span>
     }
 
     /**
      * Extract username from JWT token
      */
     public String getUsernameFromToken(String token) {
-<span class="nc" id="L52">        return getClaimsFromToken(token).getSubject();</span>
+<span class="fc" id="L52">        return getClaimsFromToken(token).getSubject();</span>
     }
 
     /**
      * Extract user ID from JWT token
      */
     public String getUserIdFromToken(String token) {
-<span class="nc" id="L59">        return (String) getClaimsFromToken(token).get(&quot;userId&quot;);</span>
+<span class="fc" id="L59">        return (String) getClaimsFromToken(token).get(&quot;userId&quot;);</span>
     }
 
     /**
@@ -64,14 +64,14 @@ import java.util.List;
      */
     @SuppressWarnings(&quot;unchecked&quot;)
     public List&lt;String&gt; getRolesFromToken(String token) {
-<span class="nc" id="L67">        return (List&lt;String&gt;) getClaimsFromToken(token).get(&quot;roles&quot;);</span>
+<span class="fc" id="L67">        return (List&lt;String&gt;) getClaimsFromToken(token).get(&quot;roles&quot;);</span>
     }
 
     /**
      * Extract expiration date from JWT token
      */
     public Date getExpirationDateFromToken(String token) {
-<span class="nc" id="L74">        return getClaimsFromToken(token).getExpiration();</span>
+<span class="fc" id="L74">        return getClaimsFromToken(token).getExpiration();</span>
     }
 
     /**
@@ -79,8 +79,8 @@ import java.util.List;
      */
     public Boolean validateToken(String token, String username) {
         try {
-<span class="nc" id="L82">            final String tokenUsername = getUsernameFromToken(token);</span>
-<span class="nc bnc" id="L83" title="All 4 branches missed.">            return (username.equals(tokenUsername) &amp;&amp; !isTokenExpired(token));</span>
+<span class="fc" id="L82">            final String tokenUsername = getUsernameFromToken(token);</span>
+<span class="pc bpc" id="L83" title="1 of 4 branches missed.">            return (username.equals(tokenUsername) &amp;&amp; !isTokenExpired(token));</span>
 <span class="nc" id="L84">        } catch (JwtException | IllegalArgumentException e) {</span>
 <span class="nc" id="L85">            logger.error(&quot;Invalid JWT token: {}&quot;, e.getMessage());</span>
 <span class="nc" id="L86">            return false;</span>
@@ -91,8 +91,8 @@ import java.util.List;
      * Check if token is expired
      */
     private Boolean isTokenExpired(String token) {
-<span class="nc" id="L94">        final Date expiration = getExpirationDateFromToken(token);</span>
-<span class="nc" id="L95">        return expiration.before(new Date());</span>
+<span class="fc" id="L94">        final Date expiration = getExpirationDateFromToken(token);</span>
+<span class="fc" id="L95">        return expiration.before(new Date());</span>
     }
 
     /**
@@ -100,17 +100,17 @@ import java.util.List;
      */
     private Claims getClaimsFromToken(String token) {
         try {
-<span class="nc" id="L103">            return Jwts.parserBuilder()</span>
-<span class="nc" id="L104">                    .setSigningKey(getSigningKey())</span>
-<span class="nc" id="L105">                    .build()</span>
-<span class="nc" id="L106">                    .parseClaimsJws(token)</span>
-<span class="nc" id="L107">                    .getBody();</span>
-<span class="nc" id="L108">        } catch (ExpiredJwtException e) {</span>
-<span class="nc" id="L109">            throw new RuntimeException(&quot;JWT token has expired&quot;);</span>
+<span class="fc" id="L103">            return Jwts.parserBuilder()</span>
+<span class="fc" id="L104">                    .setSigningKey(getSigningKey())</span>
+<span class="fc" id="L105">                    .build()</span>
+<span class="fc" id="L106">                    .parseClaimsJws(token)</span>
+<span class="fc" id="L107">                    .getBody();</span>
+<span class="fc" id="L108">        } catch (ExpiredJwtException e) {</span>
+<span class="fc" id="L109">            throw new RuntimeException(&quot;JWT token has expired&quot;);</span>
 <span class="nc" id="L110">        } catch (UnsupportedJwtException e) {</span>
 <span class="nc" id="L111">            throw new RuntimeException(&quot;JWT token is unsupported&quot;);</span>
-<span class="nc" id="L112">        } catch (MalformedJwtException e) {</span>
-<span class="nc" id="L113">            throw new RuntimeException(&quot;JWT token is malformed&quot;);</span>
+<span class="fc" id="L112">        } catch (MalformedJwtException e) {</span>
+<span class="fc" id="L113">            throw new RuntimeException(&quot;JWT token is malformed&quot;);</span>
 <span class="nc" id="L114">        } catch (SignatureException e) {</span>
 <span class="nc" id="L115">            throw new RuntimeException(&quot;JWT signature validation failed&quot;);</span>
 <span class="nc" id="L116">        } catch (IllegalArgumentException e) {</span>

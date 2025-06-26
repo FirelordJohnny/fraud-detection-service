@@ -2,7 +2,6 @@
 
 import com.faud.frauddetection.entity.FraudDetectionResultEntity;
 import com.faud.frauddetection.service.FraudDetectionResultService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,26 +17,26 @@ public class InternalFraudAnalysisController {
 
     private final FraudDetectionResultService resultService;
 
-<span class="fc" id="L21">    public InternalFraudAnalysisController(FraudDetectionResultService resultService) {</span>
-<span class="fc" id="L22">        this.resultService = resultService;</span>
-<span class="fc" id="L23">    }</span>
+<span class="fc" id="L20">    public InternalFraudAnalysisController(FraudDetectionResultService resultService) {</span>
+<span class="fc" id="L21">        this.resultService = resultService;</span>
+<span class="fc" id="L22">    }</span>
 
     @GetMapping(&quot;/results&quot;)
     public ResponseEntity&lt;List&lt;FraudDetectionResultEntity&gt;&gt; getAllResults() {
-<span class="fc" id="L27">        List&lt;FraudDetectionResultEntity&gt; results = resultService.getAllResults();</span>
-<span class="fc" id="L28">        return ResponseEntity.ok(results);</span>
+<span class="fc" id="L26">        List&lt;FraudDetectionResultEntity&gt; results = resultService.getAllResults();</span>
+<span class="fc" id="L27">        return ResponseEntity.ok(results);</span>
     }
 
     @GetMapping(&quot;/results/{id}&quot;)
     public ResponseEntity&lt;FraudDetectionResultEntity&gt; getResultById(@PathVariable Long id) {
-<span class="fc" id="L33">        return resultService.getResultById(id)</span>
-<span class="fc" id="L34">                .map(ResponseEntity::ok)</span>
-<span class="fc" id="L35">                .orElse(ResponseEntity.notFound().build());</span>
+<span class="fc" id="L32">        return resultService.getResultById(id)</span>
+<span class="fc" id="L33">                .map(ResponseEntity::ok)</span>
+<span class="fc" id="L34">                .orElse(ResponseEntity.notFound().build());</span>
     }
 
     @GetMapping(&quot;/health&quot;)
     public ResponseEntity&lt;String&gt; healthCheck() {
-<span class="fc" id="L40">        return ResponseEntity.ok(&quot;Internal Fraud Analysis API is healthy&quot;);</span>
+<span class="fc" id="L39">        return ResponseEntity.ok(&quot;Internal Fraud Analysis API is healthy&quot;);</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,33 +1,122 @@
 <?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AlertService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fraud-detection</a> &gt; <a href="index.source.html" class="el_package">com.faud.frauddetection.service</a> &gt; <span class="el_source">AlertService.java</span></div><h1>AlertService.java</h1><pre class="source lang-java linenums">package com.faud.frauddetection.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.faud.frauddetection.dto.FraudDetectionResult;
+import com.faud.frauddetection.config.FraudDetectionProperties;
+import com.faud.frauddetection.constant.AlertSeverity;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Service to handle alerting for fraudulent transactions.
+ * Sends alerts via Kafka message queue and logging services.
  */
 @Service
-<span class="nc" id="L12">@Slf4j</span>
-<span class="nc" id="L13">public class AlertService {</span>
+<span class="fc" id="L23">@Slf4j</span>
+public class AlertService {
 
-    @Value(&quot;${fraud.alert.enabled:true}&quot;)
-    private boolean alertEnabled;
+    private final KafkaTemplate&lt;String, String&gt; kafkaTemplate;
+    private final ObjectMapper objectMapper;
+    private final FraudDetectionProperties properties;
+
+<span class="fc" id="L30">    public AlertService(KafkaTemplate&lt;String, String&gt; kafkaTemplate, ObjectMapper objectMapper, FraudDetectionProperties properties) {</span>
+<span class="fc" id="L31">        this.kafkaTemplate = kafkaTemplate;</span>
+<span class="fc" id="L32">        this.objectMapper = objectMapper;</span>
+<span class="fc" id="L33">        this.properties = properties;</span>
+<span class="fc" id="L34">    }</span>
 
     /**
      * Sends an alert for a detected fraudulent transaction.
-     * This is a simplified version that logs the alert.
-     * In a real-world scenario, this could be an email, SMS, or a call to a monitoring service.
+     * This method sends alerts via multiple channels: Kafka, logging, and webhook.
+     * 
      * @param result The result of the fraud detection.
      */
     public void sendAlert(FraudDetectionResult result) {
-<span class="nc bnc" id="L25" title="All 4 branches missed.">        if (alertEnabled &amp;&amp; result.isFraud()) {</span>
-<span class="nc" id="L26">            log.warn(&quot;High-risk transaction detected! Sending alert for transaction ID: {}&quot;, result.getTransactionId());</span>
-            // Here you would add the actual alert sending logic.
-            // For example:
-            // emailService.sendAlert(&quot;fraud-team@example.com&quot;, &quot;High-Risk Transaction Detected&quot;, &quot;Transaction &quot; + result.getTransactionId() + &quot; was flagged as fraudulent.&quot;);
+<span class="fc bfc" id="L43" title="All 4 branches covered.">        if (!properties.getAlert().isEnabled() || !result.isFraudulent()) {</span>
+<span class="fc" id="L44">            return;</span>
         }
-<span class="nc" id="L31">    }</span>
+
+        try {
+            // Log the alert
+<span class="fc" id="L49">            log.warn(&quot;🚨 FRAUD ALERT: High-risk transaction detected! Transaction ID: {}, Risk Score: {}, Reason: {}&quot;, </span>
+<span class="fc" id="L50">                    result.getTransactionId(), result.getRiskScore(), result.getReason());</span>
+
+            // Send alert to Kafka topic
+<span class="fc" id="L53">            sendKafkaAlert(result);</span>
+            
+            // Send webhook alert if enabled
+            // Note: Webhook configuration would be added to properties if needed
+            // if (properties.getAlert().isWebhookEnabled()) {
+            //     sendWebhookAlert(result);
+            // }
+            
+<span class="fc" id="L61">        } catch (Exception e) {</span>
+<span class="fc" id="L62">            log.error(&quot;Failed to send fraud alert for transaction: {}&quot;, result.getTransactionId(), e);</span>
+<span class="fc" id="L63">        }</span>
+<span class="fc" id="L64">    }</span>
+
+    /**
+     * Send fraud alert to Kafka topic for downstream processing
+     */
+    private void sendKafkaAlert(FraudDetectionResult result) {
+        try {
+<span class="fc" id="L71">            Map&lt;String, Object&gt; alertData = createAlertData(result);</span>
+<span class="fc" id="L72">            String alertMessage = objectMapper.writeValueAsString(alertData);</span>
+            
+<span class="fc" id="L74">            CompletableFuture&lt;SendResult&lt;String, String&gt;&gt; future = kafkaTemplate.send(properties.getAlert().getKafkaTopic(), result.getTransactionId(), alertMessage);</span>
+            
+<span class="fc" id="L76">            future.whenComplete((sendResult, exception) -&gt; {</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">                if (exception == null) {</span>
+<span class="fc" id="L78">                    log.info(&quot;✅ Fraud alert sent to Kafka successfully for transaction: {}&quot;, result.getTransactionId());</span>
+                } else {
+<span class="fc" id="L80">                    log.error(&quot;❌ Failed to send fraud alert to Kafka for transaction: {}&quot;, result.getTransactionId(), exception);</span>
+                }
+<span class="fc" id="L82">            });</span>
+            
+<span class="fc" id="L84">        } catch (JsonProcessingException e) {</span>
+<span class="fc" id="L85">            log.error(&quot;Failed to serialize fraud alert for transaction: {}&quot;, result.getTransactionId(), e);</span>
+<span class="fc" id="L86">        }</span>
+<span class="fc" id="L87">    }</span>
+
+    /**
+     * Send webhook alert (placeholder for actual webhook implementation)
+     */
+    private void sendWebhookAlert(FraudDetectionResult result) {
+        // log.info(&quot;📡 Sending webhook alert for transaction: {}&quot;, result.getTransactionId());
+        // TODO: Implement actual HTTP webhook call
+        // This could use RestTemplate or WebClient to send HTTP POST request
+<span class="nc" id="L96">    }</span>
+
+    /**
+     * Create structured alert data
+     */
+    private Map&lt;String, Object&gt; createAlertData(FraudDetectionResult result) {
+<span class="fc" id="L102">        Map&lt;String, Object&gt; alertData = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L103">        alertData.put(&quot;alertId&quot;, &quot;ALERT_&quot; + System.currentTimeMillis());</span>
+<span class="fc" id="L104">        alertData.put(&quot;timestamp&quot;, LocalDateTime.now().toString());</span>
+<span class="fc" id="L105">        alertData.put(&quot;alertType&quot;, &quot;FRAUD_DETECTION&quot;);</span>
+<span class="fc" id="L106">        alertData.put(&quot;severity&quot;, getSeverity(result.getRiskScore()));</span>
+<span class="fc" id="L107">        alertData.put(&quot;transactionId&quot;, result.getTransactionId());</span>
+<span class="fc" id="L108">        alertData.put(&quot;riskScore&quot;, result.getRiskScore());</span>
+<span class="fc" id="L109">        alertData.put(&quot;reason&quot;, result.getReason());</span>
+<span class="fc" id="L110">        alertData.put(&quot;detectionTimestamp&quot;, result.getDetectionTime());</span>
+<span class="fc" id="L111">        alertData.put(&quot;processingTime&quot;, result.getProcessingTime());</span>
+<span class="fc" id="L112">        return alertData;</span>
+    }
+
+    /**
+     * Determine alert severity based on risk score
+     */
+    private String getSeverity(double riskScore) {
+<span class="fc" id="L119">        return AlertSeverity.getSeverity(riskScore);</span>
+    }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

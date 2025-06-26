@@ -3,6 +3,7 @@ package com.faud.frauddetection.integration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.faud.frauddetection.dto.FraudDetectionResult;
 import com.faud.frauddetection.dto.Transaction;
+import com.faud.frauddetection.dto.TransactionStatus;
 import com.faud.frauddetection.service.AlertService;
 import com.faud.frauddetection.service.FraudDetectionService;
 import com.faud.frauddetection.service.TransactionConsumer;
@@ -12,9 +13,9 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -23,14 +24,9 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.KafkaMessageListenerContainer;
 import org.springframework.kafka.listener.MessageListener;
-import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
-import org.springframework.messaging.handler.annotation.Header;
-import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -47,23 +43,7 @@ import static org.mockito.Mockito.*;
  * Integration tests for message queue interactions
  * Tests Kafka producer/consumer functionality and message processing
  */
-@SpringBootTest
-@EmbeddedKafka(
-    partitions = 1,
-    topics = {"transactions", "fraud-alerts"},
-    brokerProperties = {
-        "listeners=PLAINTEXT://localhost:9092",
-        "port=9092"
-    }
-)
-@TestPropertySource(properties = {
-    "spring.kafka.bootstrap-servers=${spring.embedded.kafka.brokers}",
-    "spring.kafka.consumer.auto-offset-reset=earliest",
-    "fraud.alert.enabled=true",
-    "fraud.alert.topic=fraud-alerts"
-})
-@ActiveProfiles("test")
-class MessageQueueIntegrationTest {
+class MessageQueueIntegrationTest extends BaseIntegrationTest {
 
     @Autowired
     private EmbeddedKafkaBroker embeddedKafkaBroker;
@@ -115,23 +95,22 @@ class MessageQueueIntegrationTest {
         objectMapper.findAndRegisterModules();
     }
 
+    @AfterEach
+    void tearDown() {
+        if (container != null && container.isRunning()) {
+            container.stop();
+        }
+    }
+
     @Test
     void testTransactionConsumerProcessesKafkaMessages() throws Exception {
-        // Given
-        Transaction transaction = createTestTransaction();
-        FraudDetectionResult fraudResult = createFraudDetectionResult(transaction.getTransactionId(), true, 0.85);
-        
-        when(fraudDetectionService.detectFraud(any(Transaction.class))).thenReturn(fraudResult);
+        Transaction transaction = createTestTransaction("mq-test-1");
+        String message = objectMapper.writeValueAsString(transaction);
 
-        // When
-        String transactionJson = objectMapper.writeValueAsString(transaction);
-        kafkaTemplate.send("transactions", transaction.getTransactionId(), transactionJson);
+        kafkaTemplate.send("transactions", message);
 
-        // Then
-        // Wait a bit for the message to be processed
-        Thread.sleep(2000);
-        
-        verify(fraudDetectionService, timeout(5000)).detectFraud(any(Transaction.class));
+        // Verify that the alert service (which is called after detection) is invoked
+        verify(alertService, timeout(5000)).sendAlert(any(FraudDetectionResult.class));
     }
 
     @Test
@@ -246,19 +225,25 @@ class MessageQueueIntegrationTest {
         assertThat(received).isNotNull();
     }
 
-    private Transaction createTestTransaction() {
-        return createTestTransaction("TXN_TEST_001", new BigDecimal("10000"));
+    private Transaction createTestTransaction(String id, BigDecimal amount) {
+        return createTestTransaction(id).toBuilder()
+                .amount(amount)
+                .build();
     }
 
-    private Transaction createTestTransaction(String transactionId, BigDecimal amount) {
-        Transaction transaction = new Transaction();
-        transaction.setTransactionId(transactionId);
-        transaction.setUserId("USER_TEST_001");
-        transaction.setAmount(amount);
-        transaction.setCurrency("USD");
-        transaction.setIpAddress("192.168.1.100");
-        transaction.setTimestamp(LocalDateTime.now());
-        return transaction;
+    private Transaction createTestTransaction(String id) {
+        return Transaction.builder()
+                .transactionId(id)
+                .userId("test-user-" + id)
+                .amount(new BigDecimal("500.00"))
+                .timestamp(LocalDateTime.now())
+                .currency("USD")
+                .ipAddress("192.168.1.10")
+                .country("US")
+                .paymentMethod("CREDIT_CARD")
+                .status(TransactionStatus.COMPLETED)
+                .merchant("MQTestMerchant")
+                .build();
     }
 
     private FraudDetectionResult createFraudDetectionResult(String transactionId, boolean isFraud, double riskScore) {

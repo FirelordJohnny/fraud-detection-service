@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
  * Fraud Detection Rule Entity
  * Supports fully configurable rule definitions, allowing new rules to be added without code changes
  */
-<span class="pc bpc" id="L15" title="113 of 118 branches missed.">@Data</span>
+<span class="pc bpc" id="L15" title="69 of 118 branches missed.">@Data</span>
 <span class="pc" id="L16">@Builder</span>
 <span class="fc" id="L17">@NoArgsConstructor</span>
 <span class="fc" id="L18">@AllArgsConstructor</span>
@@ -33,84 +33,102 @@ public class FraudRule {
     /**
      * Rule description
      */
-<span class="nc" id="L36">    private String description;</span>
+<span class="fc" id="L36">    private String description;</span>
     
     /**
      * Extended configuration (JSON format) for complex rules
+     * For multi-condition rules, this stores MultiConditionConfig as JSON
      */
-<span class="nc" id="L41">    private String ruleConfig;</span>
+<span class="fc" id="L42">    private String ruleConfig;</span>
     
     /**
      * Whether enabled
      */
-<span class="pc" id="L46">    private Boolean enabled = true;</span>
+<span class="fc" id="L47">    private Boolean enabled = true;</span>
     
     /**
      * Threshold value
      */
-<span class="fc" id="L51">    private BigDecimal thresholdValue;</span>
+<span class="fc" id="L52">    private BigDecimal thresholdValue;</span>
     
     /**
      * Condition field (for generic rules)
      */
-<span class="nc" id="L56">    private String conditionField;</span>
+<span class="fc" id="L57">    private String conditionField;</span>
     
     /**
      * Condition operator (&gt;, &lt;, =, !=, IN, NOT_IN, etc.)
      */
-<span class="nc" id="L61">    private String conditionOperator;</span>
+<span class="fc" id="L62">    private String conditionOperator;</span>
     
     /**
      * Condition value
      */
-<span class="nc" id="L66">    private String conditionValue;</span>
+<span class="fc" id="L67">    private String conditionValue;</span>
     
     /**
      * Risk weight (0.0 - 1.0)
      */
-<span class="nc" id="L71">    private BigDecimal riskWeight;</span>
+<span class="fc" id="L72">    private BigDecimal riskWeight;</span>
     
     /**
      * Rule priority
      */
-<span class="nc" id="L76">    private Integer priority;</span>
+<span class="fc" id="L77">    private Integer priority;</span>
     
     /**
      * Created time
      */
-<span class="nc" id="L81">    private LocalDateTime createdAt;</span>
+<span class="fc" id="L82">    private LocalDateTime createdAt;</span>
     
     /**
      * Updated time
      */
-<span class="nc" id="L86">    private LocalDateTime updatedAt;</span>
+<span class="fc" id="L87">    private LocalDateTime updatedAt;</span>
     
     /**
      * Set timestamps on create
      */
     public void onCreate() {
-<span class="nc bnc" id="L92" title="All 2 branches missed.">        if (createdAt == null) {</span>
-<span class="nc" id="L93">            createdAt = LocalDateTime.now();</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        if (createdAt == null) {</span>
+<span class="fc" id="L94">            createdAt = LocalDateTime.now();</span>
         }
-<span class="nc" id="L95">        updatedAt = LocalDateTime.now();</span>
+<span class="fc" id="L96">        updatedAt = LocalDateTime.now();</span>
         
         // Set default values if not specified
-<span class="nc bnc" id="L98" title="All 2 branches missed.">        if (enabled == null) {</span>
-<span class="nc" id="L99">            enabled = true;</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">        if (enabled == null) {</span>
+<span class="fc" id="L100">            enabled = true;</span>
         }
-<span class="nc bnc" id="L101" title="All 2 branches missed.">        if (riskWeight == null) {</span>
-<span class="nc" id="L102">            riskWeight = BigDecimal.valueOf(0.2);</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">        if (riskWeight == null) {</span>
+            // Note: In a full implementation, this could be injected via ApplicationContext
+            // For now, using hardcoded default that matches configuration
+<span class="fc" id="L105">            riskWeight = BigDecimal.valueOf(0.2);</span>
         }
-<span class="nc bnc" id="L104" title="All 2 branches missed.">        if (priority == null) {</span>
-<span class="nc" id="L105">            priority = 1;</span>
+<span class="fc bfc" id="L107" title="All 2 branches covered.">        if (priority == null) {</span>
+<span class="fc" id="L108">            priority = 1;</span>
         }
-<span class="nc" id="L107">    }</span>
+<span class="fc" id="L110">    }</span>
     
     /**
      * Set timestamps on update
      */
     public void onUpdate() {
-<span class="nc" id="L113">        updatedAt = LocalDateTime.now();</span>
-<span class="nc" id="L114">    }</span>
+<span class="fc" id="L116">        updatedAt = LocalDateTime.now();</span>
+<span class="fc" id="L117">    }</span>
+    
+    /**
+     * Determine the evaluation type based on the rule configuration
+     * @return RuleEvaluationType enum value
+     */
+    public RuleEvaluationType getEvaluationType() {
+        // Priority: Single Condition &gt; Multi Condition Config
+<span class="fc bfc" id="L125" title="All 4 branches covered.">        if (conditionField != null &amp;&amp; conditionOperator != null) {</span>
+<span class="fc" id="L126">            return RuleEvaluationType.SINGLE_CONDITION;</span>
+        }
+<span class="fc bfc" id="L128" title="All 4 branches covered.">        if (ruleConfig != null &amp;&amp; !ruleConfig.trim().isEmpty()) {</span>
+<span class="fc" id="L129">            return RuleEvaluationType.MULTI_CONDITION;</span>
+        }
+<span class="fc" id="L131">        return RuleEvaluationType.INVALID;</span>
+    }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -2,7 +2,6 @@ package com.faud.frauddetection.internal.controller;
 
 import com.faud.frauddetection.entity.FraudDetectionResultEntity;
 import com.faud.frauddetection.service.FraudDetectionResultService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

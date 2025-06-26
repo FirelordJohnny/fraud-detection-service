@@ -37,6 +37,7 @@ public class FraudRule {
     
     /**
      * Extended configuration (JSON format) for complex rules
+     * For multi-condition rules, this stores MultiConditionConfig as JSON
      */
     private String ruleConfig;
     
@@ -99,6 +100,8 @@ public class FraudRule {
             enabled = true;
         }
         if (riskWeight == null) {
+            // Note: In a full implementation, this could be injected via ApplicationContext
+            // For now, using hardcoded default that matches configuration
             riskWeight = BigDecimal.valueOf(0.2);
         }
         if (priority == null) {
@@ -111,5 +114,20 @@ public class FraudRule {
      */
     public void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+    
+    /**
+     * Determine the evaluation type based on the rule configuration
+     * @return RuleEvaluationType enum value
+     */
+    public RuleEvaluationType getEvaluationType() {
+        // Priority: Single Condition > Multi Condition Config
+        if (conditionField != null && conditionOperator != null) {
+            return RuleEvaluationType.SINGLE_CONDITION;
+        }
+        if (ruleConfig != null && !ruleConfig.trim().isEmpty()) {
+            return RuleEvaluationType.MULTI_CONDITION;
+        }
+        return RuleEvaluationType.INVALID;
     }
 }

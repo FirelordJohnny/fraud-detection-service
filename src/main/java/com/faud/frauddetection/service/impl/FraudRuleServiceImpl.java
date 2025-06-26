@@ -3,7 +3,6 @@ package com.faud.frauddetection.service.impl;
 import com.faud.frauddetection.entity.FraudRule;
 import com.faud.frauddetection.repository.FraudRuleRepository;
 import com.faud.frauddetection.service.FraudRuleService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -16,8 +15,11 @@ import java.util.Optional;
 @Service
 public class FraudRuleServiceImpl implements FraudRuleService {
 
-    @Autowired
-    private FraudRuleRepository fraudRuleRepository;
+    private final FraudRuleRepository fraudRuleRepository;
+    
+    public FraudRuleServiceImpl(FraudRuleRepository fraudRuleRepository) {
+        this.fraudRuleRepository = fraudRuleRepository;
+    }
 
     @Override
     public FraudRule createFraudRule(FraudRule fraudRule) {
@@ -35,6 +37,13 @@ public class FraudRuleServiceImpl implements FraudRuleService {
     @Override
     public List<FraudRule> getAllFraudRules() {
         return fraudRuleRepository.findAll();
+    }
+
+    @Override
+    public List<FraudRule> getActiveRules() {
+        return fraudRuleRepository.findAll().stream()
+            .filter(rule -> rule.getEnabled() != null && rule.getEnabled())
+            .toList();
     }
 
     @Override

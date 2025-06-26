@@ -110,6 +110,32 @@ fraud:
     batch-size: 100
     thread-pool-size: 10
     fraud-threshold: 0.3  # Risk score threshold for fraud classification
+    
+    # Time window configurations
+    time-window:
+      default-seconds: 3600    # 1 hour default
+      max-seconds: 86400       # 24 hours maximum
+      min-seconds: 300         # 5 minutes minimum
+    
+    # Rule evaluation configurations  
+    rule-evaluation:
+      default-risk-weight: 0.2
+      max-risk-score: 1.0
+      min-risk-score: 0.0
+      default-priority: 1
+      evaluation-timeout-ms: 5000
+    
+    # Alert configurations
+    alert:
+      enabled: true
+      kafka-topic: "fraud-alerts"
+      timeout-ms: 5000
+      retry-enabled: true
+      max-retries: 3
+      severity-thresholds:
+        critical: 0.8
+        high: 0.6
+        medium: 0.4
   
   alerts:
     email:

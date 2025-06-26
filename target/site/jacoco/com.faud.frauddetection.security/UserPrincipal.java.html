@@ -14,37 +14,37 @@ public class UserPrincipal implements Principal {
     private final String userId;
     private final Collection&lt;? extends GrantedAuthority&gt; authorities;
 
-<span class="nc" id="L17">    public UserPrincipal(String username, String userId, Collection&lt;? extends GrantedAuthority&gt; authorities) {</span>
-<span class="nc" id="L18">        this.username = username;</span>
-<span class="nc" id="L19">        this.userId = userId;</span>
-<span class="nc" id="L20">        this.authorities = authorities;</span>
-<span class="nc" id="L21">    }</span>
+<span class="fc" id="L17">    public UserPrincipal(String username, String userId, Collection&lt;? extends GrantedAuthority&gt; authorities) {</span>
+<span class="fc" id="L18">        this.username = username;</span>
+<span class="fc" id="L19">        this.userId = userId;</span>
+<span class="fc" id="L20">        this.authorities = authorities;</span>
+<span class="fc" id="L21">    }</span>
 
     @Override
     public String getName() {
-<span class="nc" id="L25">        return username;</span>
+<span class="fc" id="L25">        return username;</span>
     }
 
     public String getUsername() {
-<span class="nc" id="L29">        return username;</span>
+<span class="fc" id="L29">        return username;</span>
     }
 
     public String getUserId() {
-<span class="nc" id="L33">        return userId;</span>
+<span class="fc" id="L33">        return userId;</span>
     }
 
     public Collection&lt;? extends GrantedAuthority&gt; getAuthorities() {
-<span class="nc" id="L37">        return authorities;</span>
+<span class="fc" id="L37">        return authorities;</span>
     }
 
     public boolean hasRole(String role) {
-<span class="nc" id="L41">        return authorities.stream()</span>
-<span class="nc" id="L42">                .anyMatch(authority -&gt; authority.getAuthority().equals(&quot;ROLE_&quot; + role));</span>
+<span class="fc" id="L41">        return authorities.stream()</span>
+<span class="fc" id="L42">                .anyMatch(authority -&gt; authority.getAuthority().equals(&quot;ROLE_&quot; + role));</span>
     }
 
     public boolean hasAuthority(String authority) {
-<span class="nc" id="L46">        return authorities.stream()</span>
-<span class="nc" id="L47">                .anyMatch(auth -&gt; auth.getAuthority().equals(authority));</span>
+<span class="fc" id="L46">        return authorities.stream()</span>
+<span class="fc" id="L47">                .anyMatch(auth -&gt; auth.getAuthority().equals(authority));</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

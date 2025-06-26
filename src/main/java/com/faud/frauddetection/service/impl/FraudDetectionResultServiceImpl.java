@@ -4,7 +4,6 @@ import com.faud.frauddetection.dto.FraudDetectionResult;
 import com.faud.frauddetection.entity.FraudDetectionResultEntity;
 import com.faud.frauddetection.repository.FraudDetectionResultRepository;
 import com.faud.frauddetection.service.FraudDetectionResultService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,7 +17,6 @@ public class FraudDetectionResultServiceImpl implements FraudDetectionResultServ
 
     private final FraudDetectionResultRepository resultRepository;
 
-    @Autowired
     public FraudDetectionResultServiceImpl(FraudDetectionResultRepository resultRepository) {
         this.resultRepository = resultRepository;
     }
@@ -27,10 +25,10 @@ public class FraudDetectionResultServiceImpl implements FraudDetectionResultServ
     public void saveResult(FraudDetectionResult resultDto) {
         FraudDetectionResultEntity entity = new FraudDetectionResultEntity();
         entity.setTransactionId(resultDto.getTransactionId());
-        entity.setFraud(resultDto.isFraud());
+        entity.setFraud(resultDto.isFraudulent());
         entity.setRiskScore(resultDto.getRiskScore());
         entity.setReason(resultDto.getReason());
-        entity.setDetectionTimestamp(resultDto.getDetectionTimestamp());
+        entity.setDetectionTimestamp(resultDto.getDetectionTime());
         resultRepository.save(entity);
     }
 
