@@ -55,8 +55,8 @@ public class SecurityConfig {
     @Bean
     public AuthenticationEntryPoint unauthorizedEntryPoint() {
 <span class="fc" id="L57">        return (request, response, authException) -&gt; {</span>
-<span class="fc" id="L58">            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, &quot;Error: Unauthorized&quot;);</span>
-<span class="fc" id="L59">        };</span>
+<span class="nc" id="L58">            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, &quot;Error: Unauthorized&quot;);</span>
+<span class="nc" id="L59">        };</span>
     }
 } 
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

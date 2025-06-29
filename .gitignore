@@ -24,6 +24,12 @@ hs_err_pid*
 
 # Maven
 target/
+# Allow test reports
+!target/site/
+!target/site/jacoco/
+!target/site/jacoco/**
+!target/surefire-reports/
+!target/surefire-reports/**
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
@@ -54,9 +60,9 @@ buildNumber.properties
 ehthumbs.db
 Thumbs.db
 
-# Test coverage
-.jacoco/
-jacoco.exec
+# Test coverage execution data (large files that change frequently)
+target/jacoco.exec
+target/**/jacoco.exec
 
 # Logs
 logs/

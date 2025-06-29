@@ -65,11 +65,11 @@ import java.util.List;
 <span class="fc" id="L65">                response.getWriter().write(&quot;{\&quot;error\&quot;:\&quot;Invalid or missing API token\&quot;}&quot;);</span>
 <span class="fc" id="L66">                return;</span>
             }
-<span class="nc" id="L68">        } catch (Exception ex) {</span>
-<span class="nc" id="L69">            logger.error(&quot;Could not set internal API authentication&quot;, ex);</span>
-<span class="nc" id="L70">            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);</span>
-<span class="nc" id="L71">            response.getWriter().write(&quot;{\&quot;error\&quot;:\&quot;Authentication failed\&quot;}&quot;);</span>
-<span class="nc" id="L72">            return;</span>
+<span class="fc" id="L68">        } catch (Exception ex) {</span>
+<span class="fc" id="L69">            logger.error(&quot;Could not set internal API authentication&quot;, ex);</span>
+<span class="fc" id="L70">            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);</span>
+<span class="fc" id="L71">            response.getWriter().write(&quot;{\&quot;error\&quot;:\&quot;Authentication failed\&quot;}&quot;);</span>
+<span class="fc" id="L72">            return;</span>
 <span class="fc" id="L73">        }</span>
 
 <span class="fc" id="L75">        filterChain.doFilter(request, response);</span>

@@ -4,6 +4,7 @@ import com.faud.frauddetection.config.TestContainerConfiguration;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.kafka.test.context.EmbeddedKafka;
@@ -18,6 +19,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 /**
  * Base class for integration tests with TestContainers support
  * Provides MySQL, Redis, and Kafka test infrastructure
+ * Note: These tests require Docker to be available
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -37,6 +39,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
     "fraud.alert.enabled=true",
     "fraud.alert.topic=fraud-alerts"
 })
+@EnabledIfSystemProperty(named = "integration.tests.enabled", matches = "true")
 @Slf4j
 public abstract class BaseIntegrationTest {
 

@@ -129,28 +129,18 @@ class ApiTokenAuthenticationFilterTest {
 
     @Test
     void doFilterInternal_shouldHandleGenericException() throws ServletException, IOException {
-        request.setRequestURI("/internal/action");
-        request.addHeader("Authorization", "Bearer " + TEST_INTERNAL_TOKEN);
-
-        // Mocking a condition to throw an exception
-        FilterChain mockFilterChain = mock(FilterChain.class);
-        doThrow(new RuntimeException("Unexpected error")).when(mockFilterChain).doFilter(any(), any());
-
-        // We expect the filter to catch the exception and handle it gracefully
-        apiTokenAuthenticationFilter.doFilterInternal(request, response, mockFilterChain);
-        
-        // This is tricky. The exception is thrown after auth. Let's make the auth fail itself.
-        // Let's reset and try a different way.
+        // Create a request that will cause the header parsing to throw an exception
         HttpServletRequest failingRequest = mock(HttpServletRequest.class);
         when(failingRequest.getRequestURI()).thenReturn("/internal/action");
         when(failingRequest.getHeader("Authorization")).thenThrow(new RuntimeException("Header parsing failed"));
 
+        MockHttpServletResponse testResponse = new MockHttpServletResponse();
 
-        apiTokenAuthenticationFilter.doFilterInternal(failingRequest, response, filterChain);
+        apiTokenAuthenticationFilter.doFilterInternal(failingRequest, testResponse, filterChain);
 
         assertNull(SecurityContextHolder.getContext().getAuthentication());
-        assertEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
-        assertTrue(response.getContentAsString().contains("Authentication failed"));
+        assertEquals(HttpServletResponse.SC_UNAUTHORIZED, testResponse.getStatus());
+        assertTrue(testResponse.getContentAsString().contains("Authentication failed"));
     }
 
 } 

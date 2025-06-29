@@ -27,6 +27,8 @@ import org.springframework.kafka.listener.MessageListener;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -40,9 +42,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * Integration tests for message queue interactions
- * Tests Kafka producer/consumer functionality and message processing
+ * 消息队列集成测试
+ * 验证 Kafka 消息的发送和接收功能
  */
+@EnabledIfSystemProperty(named = "integration.tests.enabled", matches = "true")
 class MessageQueueIntegrationTest extends BaseIntegrationTest {
 
     @Autowired

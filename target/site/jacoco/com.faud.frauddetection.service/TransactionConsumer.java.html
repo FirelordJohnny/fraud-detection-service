@@ -10,17 +10,17 @@ import org.springframework.stereotype.Service;
  * Kafka Transaction Message Consumer
  */
 @Service
-<span class="nc" id="L13">@Slf4j</span>
+<span class="fc" id="L13">@Slf4j</span>
 public class TransactionConsumer {
 
     private final FraudDetectionService fraudDetectionService;
     private final ObjectMapper objectMapper;
 
-<span class="nc" id="L19">    public TransactionConsumer(FraudDetectionService fraudDetectionService) {</span>
-<span class="nc" id="L20">        this.fraudDetectionService = fraudDetectionService;</span>
-<span class="nc" id="L21">        this.objectMapper = new ObjectMapper();</span>
-<span class="nc" id="L22">        this.objectMapper.findAndRegisterModules(); // To handle LocalDateTime</span>
-<span class="nc" id="L23">    }</span>
+<span class="fc" id="L19">    public TransactionConsumer(FraudDetectionService fraudDetectionService) {</span>
+<span class="fc" id="L20">        this.fraudDetectionService = fraudDetectionService;</span>
+<span class="fc" id="L21">        this.objectMapper = new ObjectMapper();</span>
+<span class="fc" id="L22">        this.objectMapper.findAndRegisterModules(); // To handle LocalDateTime</span>
+<span class="fc" id="L23">    }</span>
 
     /**
      * Consume transaction messages
@@ -33,7 +33,7 @@ public class TransactionConsumer {
 <span class="nc" id="L33">            fraudDetectionService.detectFraud(transaction);</span>
 <span class="nc" id="L34">        } catch (Exception e) {</span>
 <span class="nc" id="L35">            log.error(&quot;Error processing message from Kafka: {}&quot;, message, e);</span>
-        }
+<span class="nc" id="L36">        }</span>
 <span class="nc" id="L37">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
