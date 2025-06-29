@@ -1031,10 +1031,6 @@ security:
 - Add comprehensive tests for new features
 - Update documentation for API changes
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## 📞 Support
 
 - **Documentation**: Check this README and TEST_GUIDE.md
@@ -1042,5 +1038,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Test Coverage**: View latest coverage at `target/site/jacoco/index.html`
 
 ---
-
-**Built with ❤️ for real-time fraud detection** 

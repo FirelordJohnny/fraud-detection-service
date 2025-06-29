@@ -255,7 +255,7 @@ public class MultiConditionEvaluator implements RuleEvaluator {
 <span class="fc bfc" id="L255" title="All 2 branches covered.">            if (startTime.isAfter(endTime)) {</span>
 <span class="pc bpc" id="L256" title="2 of 4 branches missed.">                return !actualTime.isBefore(startTime) || !actualTime.isAfter(endTime);</span>
             } else {
-<span class="pc bpc" id="L258" title="3 of 4 branches missed.">                return !actualTime.isBefore(startTime) &amp;&amp; !actualTime.isAfter(endTime);</span>
+<span class="pc bpc" id="L258" title="1 of 4 branches missed.">                return !actualTime.isBefore(startTime) &amp;&amp; !actualTime.isAfter(endTime);</span>
             }
             
 <span class="nc" id="L261">        } catch (Exception e) {</span>

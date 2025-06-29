@@ -7,7 +7,7 @@ fraud-detection,com.faud.frauddetection.service.evaluator,DynamicEvaluator,56,48
 fraud-detection,com.faud.frauddetection.service.evaluator,MultiConditionEvaluator.new TypeReference() {...},0,6,0,0,0,1,0,1,0,1
 fraud-detection,com.faud.frauddetection.service.evaluator,FrequencyEvaluator.new TypeReference() {...},0,6,0,0,0,1,0,1,0,1
 fraud-detection,com.faud.frauddetection.service.evaluator,AmountEvaluator.new TypeReference() {...},0,6,0,0,0,1,0,1,0,1
-fraud-detection,com.faud.frauddetection.service.evaluator,MultiConditionEvaluator,104,470,34,72,18,101,31,42,1,13
+fraud-detection,com.faud.frauddetection.service.evaluator,MultiConditionEvaluator,98,476,32,74,18,101,30,43,1,13
 fraud-detection,com.faud.frauddetection.security,ApiTokenAuthenticationFilter,0,134,1,11,0,35,1,10,0,5
 fraud-detection,com.faud.frauddetection.security,JwtUtil,27,119,1,3,9,29,1,12,0,11
 fraud-detection,com.faud.frauddetection.security,UserPrincipal,0,49,0,0,0,13,0,9,0,9
