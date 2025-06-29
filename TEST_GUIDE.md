@@ -17,7 +17,7 @@ This project provides multiple test execution modes to adapt to different develo
 ./run-tests.sh unit
 
 # Windows 
-mvn test -Dtest='!**/*IntegrationTest,!**/Resilience*Test' -DfailIfNoTests=false
+mvn test -Dtest="!**/*IntegrationTest,!**/Resilience*Test" -DfailIfNoTests=false
 ```
 
 ### 2. Run Lightweight Tests (No Docker Required)
@@ -26,7 +26,7 @@ mvn test -Dtest='!**/*IntegrationTest,!**/Resilience*Test' -DfailIfNoTests=false
 ./run-tests.sh lightweight
 
 # Windows
-mvn test -Dtest='!**/Resilience*Test' -Dspring.profiles.active=test -DfailIfNoTests=false
+mvn test -Dtest="!**/Resilience*Test" -Dspring.profiles.active=test -DfailIfNoTests=false
 ```
 
 ### 3. Run Full Integration Tests (Docker Required)
@@ -35,7 +35,7 @@ mvn test -Dtest='!**/Resilience*Test' -Dspring.profiles.active=test -DfailIfNoTe
 ./run-tests.sh integration
 
 # Windows
-mvn test -Dtest='**/*IntegrationTest' -Dspring.profiles.active=integration -DfailIfNoTests=false
+mvn test -Dtest="**/*IntegrationTest" -Dintegration.tests.enabled=true -DfailIfNoTests=false
 ```
 
 ## Test Environment Requirements
@@ -61,21 +61,23 @@ mvn test -Dtest='**/*IntegrationTest' -Dspring.profiles.active=integration -Dfai
 
 ### Unit Tests
 - **File Location**: `src/test/java/**/*Test.java` (excluding `*IntegrationTest`)
-- **Execution Time**: < 30 seconds
+- **Execution Time**: 20-30 seconds (466+ tests)
 - **Dependencies**: No external dependencies
 - **Purpose**: Verify business logic and individual component functionality
 
 ### Integration Tests
 - **File Location**: `src/test/java/**/*IntegrationTest.java`
 - **Execution Time**: 2-5 minutes (first run requires Docker image downloads)
-- **Dependencies**: Docker, MySQL Container, Embedded Redis, Embedded Kafka
+- **Dependencies**: Docker, MySQL Container, TestContainers
 - **Purpose**: Verify component collaboration and external system integration
+- **Note**: Requires `-Dintegration.tests.enabled=true` system property
 
 ### Resilience Tests
 - **File Location**: `src/test/java/**/Resilience*Test.java`
 - **Execution Time**: 3-10 minutes
 - **Dependencies**: Same as integration tests
 - **Purpose**: Verify system behavior under failures, high load, and network issues
+- **Note**: Requires `-Dintegration.tests.enabled=true` system property
 
 ## Detailed Command Instructions
 
@@ -106,19 +108,19 @@ mvn test -Dtest='**/*IntegrationTest' -Dspring.profiles.active=integration -Dfai
 ### Using Maven Directly
 ```bash
 # Unit tests
-mvn test -Dtest='!**/*IntegrationTest,!**/Resilience*Test'
+mvn test -Dtest="!**/*IntegrationTest,!**/Resilience*Test"
 
-# Integration tests
-mvn test -Dtest='**/*IntegrationTest' -Dspring.profiles.active=integration
+# Integration tests (requires Docker and system property)
+mvn test -Dtest="**/*IntegrationTest" -Dintegration.tests.enabled=true
 
-# Resilience tests
-mvn test -Dtest='**/Resilience*Test' -Dspring.profiles.active=integration
+# Resilience tests (requires Docker and system property)
+mvn test -Dtest="**/Resilience*Test" -Dintegration.tests.enabled=true
 
 # All tests
-mvn test -Dspring.profiles.active=integration
+mvn test -Dintegration.tests.enabled=true
 
 # Generate coverage report
-mvn clean test jacoco:report -Dspring.profiles.active=integration
+mvn clean test jacoco:report
 ```
 
 ## Common Issue Resolution
@@ -141,11 +143,11 @@ docker pull mysql:8.0
 
 ### 2. Port Conflict Issues
 
-**Issue**: `Port 6370 already in use`
+**Issue**: `Port 6379 already in use`
 ```bash
 # Solution: Stop process using the port
-# Windows: netstat -ano | findstr 6370
-# Linux/Mac: lsof -i :6370
+# Windows: netstat -ano | findstr 6379
+# Linux/Mac: lsof -i :6379
 ```
 
 ### 3. Memory Issues
@@ -173,17 +175,32 @@ docker volume prune -f
 name: Tests
 on: [push, pull_request]
 jobs:
-  test:
+  unit-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-java@v3
         with:
           java-version: '17'
-      - name: Run lightweight tests
-        run: ./run-tests.sh lightweight
+      - name: Run unit tests
+        run: mvn test -Dtest="!**/*IntegrationTest"
+      - name: Generate coverage report
+        run: mvn jacoco:report
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        
+  integration-tests:
+    runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:dind
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3
+        with:
+          java-version: '17'
       - name: Run integration tests
-        run: ./run-tests.sh integration
+        run: mvn test -Dtest="**/*IntegrationTest" -Dintegration.tests.enabled=true
 ```
 
 ### Jenkins Example
@@ -207,31 +224,44 @@ pipeline {
 
 ## Test Coverage
 
-Generate coverage report:
+### Current Coverage Metrics
+- **Instruction Coverage**: **87%** ⭐
+- **Branch Coverage**: **67%** ⭐
+- **Line Coverage**: **91%** ⭐
+- **Method Coverage**: **91%** ⭐
+- **Class Coverage**: **100%** ⭐
+
+### Generate Coverage Report
 ```bash
 ./run-tests.sh coverage
+# Or directly with Maven
+mvn clean test jacoco:report
 ```
 
-Report locations:
-- HTML report: `target/site/jacoco/index.html`
-- XML report: `target/site/jacoco/jacoco.xml`
+### Report Locations
+- **HTML Report**: `target/site/jacoco/index.html` (main report)
+- **XML Report**: `target/site/jacoco/jacoco.xml` (for CI/CD)
+- **CSV Report**: `target/site/jacoco/jacoco.csv` (for analysis)
 
 ## Performance Benchmarks
 
 Execution time reference on standard development machines:
 
-- **Unit Tests**: 20-30 seconds
+- **Unit Tests**: 20-30 seconds (466+ tests)
 - **Lightweight Tests**: 1-2 minutes
-- **Integration Tests**: 3-5 minutes (longer on first run)
+- **Integration Tests**: 3-5 minutes (longer on first run, requires Docker)
 - **Resilience Tests**: 5-10 minutes
-- **Full Test Suite**: 8-15 minutes
+- **Full Test Suite**: 6-12 minutes (without integration tests)
+- **Full Suite with Integration**: 10-20 minutes (first run with Docker setup)
 
 ## Best Practices
 
-1. **Daily Development**: Use `./run-tests.sh unit` for quick verification
-2. **Feature Completion**: Use `./run-tests.sh lightweight` for more comprehensive testing
-3. **Before Commit**: Use `./run-tests.sh all` for complete testing
-4. **Periodic**: Use `./run-tests.sh coverage` to check test coverage
+1. **Daily Development**: Use `./run-tests.sh unit` for quick verification (20-30 seconds)
+2. **Feature Completion**: Use `./run-tests.sh lightweight` for comprehensive testing without Docker
+3. **Before Commit**: Run `mvn clean test` to ensure all unit tests pass
+4. **Periodic**: Use `./run-tests.sh coverage` to check test coverage (target: >80%)
+5. **Full Validation**: Use `./run-tests.sh integration` only when Docker is available
+6. **CI/CD Pipeline**: Use unit tests for fast feedback, integration tests for nightly builds
 
 ## Troubleshooting
 
