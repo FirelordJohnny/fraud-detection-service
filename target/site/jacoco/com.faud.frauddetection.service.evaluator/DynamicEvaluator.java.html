@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DynamicEvaluator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fraud-detection</a> &gt; <a href="index.source.html" class="el_package">com.faud.frauddetection.service.evaluator</a> &gt; <span class="el_source">DynamicEvaluator.java</span></div><h1>DynamicEvaluator.java</h1><pre class="source lang-java linenums">package com.faud.frauddetection.service.evaluator;
+
+import com.faud.frauddetection.dto.Transaction;
+import com.faud.frauddetection.entity.FraudRule;
+import com.faud.frauddetection.entity.RuleEvaluationType;
+import com.faud.frauddetection.dto.RuleEvaluationResult;
+import com.faud.frauddetection.constant.FraudRuleOperators;
+import com.faud.frauddetection.constant.FraudRuleTypes;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.time.LocalTime;
+import java.util.Set;
+import java.util.Arrays;
+import java.util.List;
+import java.lang.reflect.Method;
+
+/**
+ * Dynamic rule evaluator implementation for simple rules
+ * Handles single field comparisons (&gt;, &lt;, =, !=, IN, NOT_IN) and basic logic combinations
+ */
+@Component
+<span class="fc" id="L24">@Slf4j</span>
+public class DynamicEvaluator implements RuleEvaluator {
+    
+    private final MultiConditionEvaluator multiConditionEvaluator;
+    
+<span class="fc" id="L29">    public DynamicEvaluator(MultiConditionEvaluator multiConditionEvaluator) {</span>
+<span class="fc" id="L30">        this.multiConditionEvaluator = multiConditionEvaluator;</span>
+<span class="fc" id="L31">    }</span>
+    
+    @Override
+    public RuleEvaluationResult evaluateRule(FraudRule rule, Transaction transaction) {
+        try {
+<span class="fc" id="L36">            log.debug(&quot;Evaluating dynamic rule: {} for transaction: {}&quot;, rule.getRuleName(), transaction.getTransactionId());</span>
+            
+            // Select different processing methods based on evaluation type
+<span class="fc" id="L39">            RuleEvaluationType evaluationType = rule.getEvaluationType();</span>
+            
+<span class="fc bfc" id="L41" title="All 3 branches covered.">            return switch (evaluationType) {</span>
+<span class="fc" id="L42">                case SINGLE_CONDITION -&gt; evaluateFieldCondition(rule, transaction);</span>
+<span class="fc" id="L43">                case MULTI_CONDITION -&gt; multiConditionEvaluator.evaluateRule(rule, transaction);</span>
+<span class="fc" id="L44">                case INVALID -&gt; RuleEvaluationResult.builder()</span>
+<span class="fc" id="L45">                    .triggered(false)</span>
+<span class="fc" id="L46">                    .reason(&quot;No valid rule configuration found&quot;)</span>
+<span class="fc" id="L47">                    .ruleName(rule.getRuleName())</span>
+<span class="fc" id="L48">                    .build();</span>
+            };
+                
+<span class="fc" id="L51">        } catch (Exception e) {</span>
+<span class="fc" id="L52">            log.error(&quot;Error evaluating dynamic rule {}: {}&quot;, rule.getRuleName(), e.getMessage(), e);</span>
+<span class="fc" id="L53">            return RuleEvaluationResult.builder()</span>
+<span class="fc" id="L54">                .triggered(false)</span>
+<span class="fc" id="L55">                .reason(&quot;Rule evaluation error: &quot; + e.getMessage())</span>
+<span class="fc" id="L56">                .ruleName(rule.getRuleName())</span>
+<span class="fc" id="L57">                .build();</span>
+        }
+    }
+    
+    @Override
+    public boolean supports(String ruleType) {
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if (ruleType == null) {</span>
+<span class="fc" id="L64">            return false;</span>
+        }
+        // This evaluator supports both single and multi-condition rule types
+<span class="fc" id="L67">        return Set.of(FraudRuleTypes.SIMPLE, FraudRuleTypes.GENERIC, FraudRuleTypes.FIELD_CONDITION, </span>
+                     FraudRuleTypes.SINGLE_AMOUNT, FraudRuleTypes.TIME_OF_DAY, FraudRuleTypes.IP_BLACKLIST, 
+                     FraudRuleTypes.IP_WHITELIST, FraudRuleTypes.LOCATION, FraudRuleTypes.DEVICE,
+                     FraudRuleTypes.MULTI_CONDITION, FraudRuleTypes.COMPLEX_CONDITION)
+<span class="fc" id="L71">            .contains(ruleType.toUpperCase());</span>
+    }
+    
+    /**
+     * Evaluate field-based condition rules
+     */
+    private RuleEvaluationResult evaluateFieldCondition(FraudRule rule, Transaction transaction) {
+        try {
+<span class="fc" id="L79">            Object actualValue = getTransactionFieldValue(transaction, rule.getConditionField());</span>
+<span class="fc" id="L80">            String operator = rule.getConditionOperator().toUpperCase();</span>
+<span class="fc" id="L81">            String expectedValue = rule.getConditionValue();</span>
+            
+<span class="fc" id="L83">            boolean triggered = evaluateCondition(actualValue, operator, expectedValue);</span>
+<span class="fc bfc" id="L84" title="All 4 branches covered.">            double riskScore = triggered ? (rule.getRiskWeight() != null ? rule.getRiskWeight().doubleValue() : 0.5) : 0.0;</span>
+            
+<span class="fc" id="L86">            return RuleEvaluationResult.builder()</span>
+<span class="fc" id="L87">                .triggered(triggered)</span>
+<span class="fc" id="L88">                .riskScore(riskScore)</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">                .reason(triggered ? String.format(&quot;Field %s %s %s condition met&quot;, </span>
+<span class="fc" id="L90">                    rule.getConditionField(), operator, expectedValue) : &quot;Condition not met&quot;)</span>
+<span class="fc" id="L91">                .ruleName(rule.getRuleName())</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">                .actualValue(actualValue != null ? actualValue.toString() : &quot;null&quot;)</span>
+<span class="fc" id="L93">                .thresholdValue(expectedValue)</span>
+<span class="fc" id="L94">                .build();</span>
+                
+<span class="fc" id="L96">        } catch (Exception e) {</span>
+<span class="fc" id="L97">            log.error(&quot;Error evaluating field condition: {}&quot;, e.getMessage(), e);</span>
+<span class="fc" id="L98">            return RuleEvaluationResult.builder()</span>
+<span class="fc" id="L99">                .triggered(false)</span>
+<span class="fc" id="L100">                .reason(&quot;Field condition evaluation error: &quot; + e.getMessage())</span>
+<span class="fc" id="L101">                .ruleName(rule.getRuleName())</span>
+<span class="fc" id="L102">                .build();</span>
+        }
+    }
+    
+    /**
+     * Get field value from transaction using getter methods
+     */
+    private Object getTransactionFieldValue(Transaction transaction, String fieldName) throws Exception {
+        // Convert field name to getter method name
+<span class="fc" id="L111">        String getterName = &quot;get&quot; + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);</span>
+        
+        try {
+<span class="fc" id="L114">            Method method = Transaction.class.getMethod(getterName);</span>
+<span class="fc" id="L115">            return method.invoke(transaction);</span>
+<span class="fc" id="L116">        } catch (NoSuchMethodException e) {</span>
+            // Fallback: try to access field directly for backward compatibility
+            try {
+<span class="nc" id="L119">                java.lang.reflect.Field field = Transaction.class.getDeclaredField(fieldName);</span>
+<span class="nc" id="L120">                field.setAccessible(true);</span>
+<span class="nc" id="L121">                return field.get(transaction);</span>
+<span class="fc" id="L122">            } catch (Exception fieldException) {</span>
+<span class="fc" id="L123">                log.error(&quot;Unable to access field '{}' via getter '{}' or direct field access&quot;, fieldName, getterName);</span>
+<span class="fc" id="L124">                throw new Exception(&quot;Field '&quot; + fieldName + &quot;' not found or not accessible&quot;);</span>
+            }
+        }
+    }
+    
+    /**
+     * Evaluate condition based on operator
+     */
+    private boolean evaluateCondition(Object actualValue, String operator, String expectedValue) {
+<span class="fc bfc" id="L133" title="All 2 branches covered.">        if (actualValue == null) {</span>
+<span class="fc" id="L134">            return FraudRuleOperators.IS_NULL.equals(operator);</span>
+        }
+        
+<span class="pc bpc" id="L137" title="1 of 14 branches missed.">        return switch (operator) {</span>
+            case FraudRuleOperators.GREATER_THAN, FraudRuleOperators.GREATER_THAN_SYMBOL -&gt; 
+<span class="fc bfc" id="L139" title="All 2 branches covered.">                compareValues(actualValue, expectedValue) &gt; 0;</span>
+            case FraudRuleOperators.LESS_THAN, FraudRuleOperators.LESS_THAN_SYMBOL -&gt; 
+<span class="fc bfc" id="L141" title="All 2 branches covered.">                compareValues(actualValue, expectedValue) &lt; 0;</span>
+            case FraudRuleOperators.EQUAL, FraudRuleOperators.EQUAL_SYMBOL -&gt; 
+<span class="pc bpc" id="L143" title="1 of 2 branches missed.">                compareValues(actualValue, expectedValue) == 0;</span>
+            case FraudRuleOperators.NOT_EQUAL, FraudRuleOperators.NOT_EQUAL_SYMBOL -&gt; 
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">                compareValues(actualValue, expectedValue) != 0;</span>
+            case FraudRuleOperators.GREATER_THAN_OR_EQUAL, FraudRuleOperators.GREATER_THAN_OR_EQUAL_SYMBOL -&gt; 
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">                compareValues(actualValue, expectedValue) &gt;= 0;</span>
+            case FraudRuleOperators.LESS_THAN_OR_EQUAL, FraudRuleOperators.LESS_THAN_OR_EQUAL_SYMBOL -&gt; 
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">                compareValues(actualValue, expectedValue) &lt;= 0;</span>
+            case FraudRuleOperators.IN -&gt; {
+<span class="fc" id="L151">                List&lt;String&gt; values = Arrays.asList(expectedValue.split(FraudRuleOperators.LIST_VALUE_SEPARATOR));</span>
+<span class="fc" id="L152">                yield values.stream().anyMatch(val -&gt; val.trim().equals(actualValue.toString().trim()));</span>
+            }
+            case FraudRuleOperators.NOT_IN -&gt; {
+<span class="fc" id="L155">                List&lt;String&gt; values = Arrays.asList(expectedValue.split(FraudRuleOperators.LIST_VALUE_SEPARATOR));</span>
+<span class="fc" id="L156">                yield values.stream().noneMatch(val -&gt; val.trim().equals(actualValue.toString().trim()));</span>
+            }
+<span class="fc" id="L158">            case FraudRuleOperators.CONTAINS -&gt; actualValue.toString().contains(expectedValue);</span>
+<span class="fc" id="L159">            case FraudRuleOperators.TIME_IN_RANGE -&gt; evaluateTimeInRange(actualValue, expectedValue);</span>
+<span class="pc bpc" id="L160" title="1 of 2 branches missed.">            case FraudRuleOperators.TIME_NOT_IN_RANGE -&gt; !evaluateTimeInRange(actualValue, expectedValue);</span>
+<span class="nc" id="L161">            case FraudRuleOperators.IS_NULL -&gt; false; // already handled above</span>
+<span class="fc" id="L162">            case FraudRuleOperators.IS_NOT_NULL -&gt; true; // already handled above</span>
+            default -&gt; {
+<span class="fc" id="L164">                log.warn(&quot;Unsupported operator: {}&quot;, operator);</span>
+<span class="fc" id="L165">                yield false;</span>
+            }
+        };
+    }
+    
+    /**
+     * Compare values based on their types
+     */
+    private int compareValues(Object actualValue, String expectedValue) {
+<span class="fc bfc" id="L174" title="All 2 branches covered.">        if (actualValue instanceof BigDecimal) {</span>
+<span class="fc" id="L175">            BigDecimal expected = new BigDecimal(expectedValue);</span>
+<span class="fc" id="L176">            return ((BigDecimal) actualValue).compareTo(expected);</span>
+        }
+<span class="pc bpc" id="L178" title="1 of 2 branches missed.">        if (actualValue instanceof Number) {</span>
+<span class="nc" id="L179">            Double actual = ((Number) actualValue).doubleValue();</span>
+<span class="nc" id="L180">            Double expected = Double.parseDouble(expectedValue);</span>
+<span class="nc" id="L181">            return actual.compareTo(expected);</span>
+        }
+<span class="pc bpc" id="L183" title="1 of 2 branches missed.">        if (actualValue instanceof String) {</span>
+<span class="fc" id="L184">            return ((String) actualValue).compareTo(expectedValue);</span>
+        }
+        // Default to string comparison
+<span class="nc" id="L187">        return actualValue.toString().compareTo(expectedValue);</span>
+    }
+    
+    /**
+     * Evaluate if a time value is within a specified range
+     * Expected format: &quot;22:00-06:00&quot; or &quot;09:00-17:00&quot;
+     */
+    private boolean evaluateTimeInRange(Object actualValue, String timeRange) {
+        try {
+            // Extract time from actualValue
+            LocalTime actualTime;
+<span class="pc bpc" id="L198" title="1 of 2 branches missed.">            if (actualValue instanceof LocalTime) {</span>
+<span class="nc" id="L199">                actualTime = (LocalTime) actualValue;</span>
+<span class="pc bpc" id="L200" title="1 of 2 branches missed.">            } else if (actualValue instanceof java.time.LocalDateTime) {</span>
+<span class="fc" id="L201">                actualTime = ((java.time.LocalDateTime) actualValue).toLocalTime();</span>
+            } else {
+                // Try to parse as string
+<span class="nc" id="L204">                actualTime = LocalTime.parse(actualValue.toString());</span>
+            }
+            
+            // Parse time range (format: &quot;22:00-06:00&quot;)
+<span class="fc" id="L208">            String[] parts = timeRange.split(FraudRuleOperators.TIME_RANGE_SEPARATOR);</span>
+<span class="pc bpc" id="L209" title="1 of 2 branches missed.">            if (parts.length != 2) {</span>
+<span class="nc" id="L210">                log.warn(&quot;Invalid time range format: {}. Expected format: HH:mm-HH:mm&quot;, timeRange);</span>
+<span class="nc" id="L211">                return false;</span>
+            }
+            
+<span class="fc" id="L214">            LocalTime startTime = LocalTime.parse(parts[0].trim());</span>
+<span class="fc" id="L215">            LocalTime endTime = LocalTime.parse(parts[1].trim());</span>
+            
+            // Handle overnight ranges (e.g., 22:00-06:00)
+<span class="fc bfc" id="L218" title="All 2 branches covered.">            if (startTime.isAfter(endTime)) {</span>
+                // Overnight range: current time should be after start OR before end
+<span class="fc bfc" id="L220" title="All 4 branches covered.">                return !actualTime.isBefore(startTime) || !actualTime.isAfter(endTime);</span>
+            } else {
+                // Normal range: current time should be between start and end
+<span class="pc bpc" id="L223" title="2 of 4 branches missed.">                return !actualTime.isBefore(startTime) &amp;&amp; !actualTime.isAfter(endTime);</span>
+            }
+            
+<span class="fc" id="L226">        } catch (Exception e) {</span>
+<span class="fc" id="L227">            log.warn(&quot;Error evaluating time range {} for value {}: {}&quot;, timeRange, actualValue, e.getMessage());</span>
+<span class="fc" id="L228">            return false;</span>
+        }
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

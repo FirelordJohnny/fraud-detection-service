@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Transaction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fraud-detection</a> &gt; <a href="index.source.html" class="el_package">com.faud.frauddetection.dto</a> &gt; <span class="el_source">Transaction.java</span></div><h1>Transaction.java</h1><pre class="source lang-java linenums">package com.faud.frauddetection.dto;
+
+import lombok.Getter;
+import lombok.ToString;
+import lombok.Builder;
+import lombok.AllArgsConstructor;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.UUID;
+
+@Getter
+<span class="fc" id="L13">@ToString</span>
+<span class="pc" id="L14">@Builder(toBuilder = true)</span>
+<span class="fc" id="L15">@AllArgsConstructor</span>
+public final class Transaction {
+
+<span class="fc" id="L18">    private final String transactionId;</span>
+<span class="fc" id="L19">    private final String userId;</span>
+<span class="fc" id="L20">    private final BigDecimal amount;</span>
+<span class="fc" id="L21">    private final LocalDateTime timestamp;</span>
+<span class="fc" id="L22">    private final String ipAddress;</span>
+<span class="fc" id="L23">    private final String deviceId;</span>
+<span class="fc" id="L24">    private final String userAgent;</span>
+<span class="fc" id="L25">    private final String country;</span>
+<span class="fc" id="L26">    private final String currency;</span>
+<span class="fc" id="L27">    private final String merchant;</span>
+<span class="fc" id="L28">    private final String paymentMethod;</span>
+<span class="fc" id="L29">    private final TransactionStatus status;</span>
+
+<span class="fc" id="L31">    public Transaction() {</span>
+<span class="fc" id="L32">        this.transactionId = UUID.randomUUID().toString();</span>
+<span class="fc" id="L33">        this.userId = null;</span>
+<span class="fc" id="L34">        this.amount = null;</span>
+<span class="fc" id="L35">        this.timestamp = LocalDateTime.now();</span>
+<span class="fc" id="L36">        this.ipAddress = null;</span>
+<span class="fc" id="L37">        this.deviceId = null;</span>
+<span class="fc" id="L38">        this.userAgent = null;</span>
+<span class="fc" id="L39">        this.country = null;</span>
+<span class="fc" id="L40">        this.currency = null;</span>
+<span class="fc" id="L41">        this.merchant = null;</span>
+<span class="fc" id="L42">        this.paymentMethod = null;</span>
+<span class="fc" id="L43">        this.status = null;</span>
+<span class="fc" id="L44">    }</span>
+
+    @Override
+    public boolean equals(Object o) {
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        if (this == o) return true;</span>
+<span class="fc bfc" id="L49" title="All 4 branches covered.">        if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="fc" id="L50">        Transaction that = (Transaction) o;</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        return Objects.equals(transactionId, that.transactionId) &amp;&amp;</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">                Objects.equals(userId, that.userId) &amp;&amp;</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">                Objects.equals(amount, that.amount) &amp;&amp;</span>
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">                Objects.equals(timestamp, that.timestamp) &amp;&amp;</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">                Objects.equals(ipAddress, that.ipAddress) &amp;&amp;</span>
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">                Objects.equals(deviceId, that.deviceId) &amp;&amp;</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">                Objects.equals(userAgent, that.userAgent) &amp;&amp;</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">                Objects.equals(country, that.country) &amp;&amp;</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">                Objects.equals(currency, that.currency) &amp;&amp;</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">                Objects.equals(merchant, that.merchant) &amp;&amp;</span>
+<span class="pc bpc" id="L61" title="2 of 4 branches missed.">                Objects.equals(paymentMethod, that.paymentMethod) &amp;&amp;</span>
+                status == that.status;
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L67">        return Objects.hash(transactionId, userId, amount, timestamp, ipAddress, deviceId, userAgent, country, currency, merchant, paymentMethod, status);</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

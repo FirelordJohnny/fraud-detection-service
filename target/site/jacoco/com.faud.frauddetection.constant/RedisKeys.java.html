@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RedisKeys.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fraud-detection</a> &gt; <a href="index.source.html" class="el_package">com.faud.frauddetection.constant</a> &gt; <span class="el_source">RedisKeys.java</span></div><h1>RedisKeys.java</h1><pre class="source lang-java linenums">package com.faud.frauddetection.constant;
+
+/**
+ * Constants for Redis key patterns
+ * Centralizes all Redis key patterns used in the fraud detection system
+ */
+public final class RedisKeys {
+    
+    private RedisKeys() {
+        // Utility class - prevent instantiation
+    }
+    
+    // Key Prefixes
+    public static final String FRAUD_PREFIX = &quot;fraud&quot;;
+    public static final String FREQUENCY_PREFIX = &quot;frequency&quot;;
+    public static final String AMOUNTS_PREFIX = &quot;amounts&quot;;
+    public static final String TRANSACTIONS_PREFIX = &quot;transactions&quot;;
+    public static final String USER_PREFIX = &quot;user&quot;;
+    
+    // Key Separators
+    public static final String KEY_SEPARATOR = &quot;:&quot;;
+    
+    // Complete Key Patterns
+    public static final String FRAUD_FREQUENCY_USER_PATTERN = FRAUD_PREFIX + KEY_SEPARATOR + FREQUENCY_PREFIX + KEY_SEPARATOR + USER_PREFIX + KEY_SEPARATOR + &quot;%s&quot;;
+    public static final String AMOUNTS_USER_PATTERN = AMOUNTS_PREFIX + KEY_SEPARATOR + USER_PREFIX + KEY_SEPARATOR + &quot;%s&quot;;
+    public static final String TRANSACTIONS_USER_PATTERN = TRANSACTIONS_PREFIX + KEY_SEPARATOR + USER_PREFIX + KEY_SEPARATOR + &quot;%s&quot;;
+    
+    /**
+     * Generate fraud frequency key for user
+     * @param userId user identifier
+     * @return formatted Redis key
+     */
+    public static String fraudFrequencyKey(String userId) {
+<span class="nc" id="L34">        return String.format(FRAUD_FREQUENCY_USER_PATTERN, userId);</span>
+    }
+    
+    /**
+     * Generate amounts key for user
+     * @param userId user identifier
+     * @return formatted Redis key
+     */
+    public static String amountsKey(String userId) {
+<span class="fc" id="L43">        return String.format(AMOUNTS_USER_PATTERN, userId);</span>
+    }
+    
+    /**
+     * Generate transactions key for user
+     * @param userId user identifier
+     * @return formatted Redis key
+     */
+    public static String transactionsKey(String userId) {
+<span class="fc" id="L52">        return String.format(TRANSACTIONS_USER_PATTERN, userId);</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

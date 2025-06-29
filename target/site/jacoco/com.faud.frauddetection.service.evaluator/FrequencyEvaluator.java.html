@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FrequencyEvaluator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fraud-detection</a> &gt; <a href="index.source.html" class="el_package">com.faud.frauddetection.service.evaluator</a> &gt; <span class="el_source">FrequencyEvaluator.java</span></div><h1>FrequencyEvaluator.java</h1><pre class="source lang-java linenums">package com.faud.frauddetection.service.evaluator;
+
+import com.faud.frauddetection.dto.Transaction;
+import com.faud.frauddetection.entity.FraudRule;
+import com.faud.frauddetection.dto.RuleEvaluationResult;
+import com.faud.frauddetection.constant.RedisKeys;
+import com.faud.frauddetection.config.FraudDetectionProperties;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.stereotype.Component;
+
+import java.time.Instant;
+import java.util.concurrent.TimeUnit;
+import java.util.Map;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+
+/**
+ * Frequency-based rule evaluator implementation
+ * Handles transaction frequency validation within a time window
+ */
+@Component
+<span class="fc" id="L23">@Slf4j</span>
+public class FrequencyEvaluator implements RuleEvaluator {
+    
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
+    private final FraudDetectionProperties properties;
+    
+<span class="fc" id="L30">    public FrequencyEvaluator(StringRedisTemplate redisTemplate, FraudDetectionProperties properties) {</span>
+<span class="fc" id="L31">        this.redisTemplate = redisTemplate;</span>
+<span class="fc" id="L32">        this.objectMapper = new ObjectMapper();</span>
+<span class="fc" id="L33">        this.properties = properties;</span>
+<span class="fc" id="L34">    }</span>
+    
+    @Override
+    public RuleEvaluationResult evaluateRule(FraudRule rule, Transaction transaction) {
+        try {
+<span class="fc" id="L39">            log.debug(&quot;Evaluating frequency rule: {} for transaction: {}&quot;, rule.getRuleName(), transaction.getTransactionId());</span>
+            
+<span class="fc bfc" id="L41" title="All 2 branches covered.">            if (rule.getThresholdValue() == null) {</span>
+<span class="fc" id="L42">                return RuleEvaluationResult.builder()</span>
+<span class="fc" id="L43">                    .triggered(false)</span>
+<span class="fc" id="L44">                    .reason(&quot;Threshold value not configured&quot;)</span>
+<span class="fc" id="L45">                    .ruleName(rule.getRuleName())</span>
+<span class="fc" id="L46">                    .build();</span>
+            }
+            
+            // Get time window from rule configuration, fallback to default
+<span class="fc" id="L50">            long timeWindowSeconds = getTimeWindowFromRule(rule);</span>
+            
+<span class="fc" id="L52">            String key = RedisKeys.transactionsKey(transaction.getUserId());</span>
+<span class="fc" id="L53">            long now = Instant.now().toEpochMilli();</span>
+<span class="fc" id="L54">            long windowStart = now - (timeWindowSeconds * 1000);</span>
+            
+            // Add current transaction
+<span class="fc" id="L57">            redisTemplate.opsForZSet().add(key, String.valueOf(now), now);</span>
+            // Remove old transactions outside the window
+<span class="fc" id="L59">            redisTemplate.opsForZSet().removeRangeByScore(key, 0, windowStart);</span>
+            // Count transactions within the window
+<span class="fc" id="L61">            Long count = redisTemplate.opsForZSet().zCard(key);</span>
+            // Set expiration time to prevent memory leaks
+<span class="fc" id="L63">            redisTemplate.expire(key, timeWindowSeconds, TimeUnit.SECONDS);</span>
+            
+<span class="fc bfc" id="L65" title="All 4 branches covered.">            boolean triggered = count != null &amp;&amp; count &gt; rule.getThresholdValue().longValue();</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">            double riskScore = triggered ? Math.min(count.doubleValue() / rule.getThresholdValue().doubleValue(), 1.0) : 0.0;</span>
+            
+<span class="fc" id="L68">            return RuleEvaluationResult.builder()</span>
+<span class="fc" id="L69">                .triggered(triggered)</span>
+<span class="fc" id="L70">                .riskScore(riskScore)</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">                .reason(triggered ? String.format(&quot;User has %d transactions in %d seconds, exceeds threshold %d&quot;, </span>
+<span class="fc" id="L72">                    count, timeWindowSeconds, rule.getThresholdValue().longValue()) : &quot;Transaction frequency is normal&quot;)</span>
+<span class="fc" id="L73">                .ruleName(rule.getRuleName())</span>
+<span class="fc" id="L74">                .actualValue(String.valueOf(count))</span>
+<span class="fc" id="L75">                .thresholdValue(rule.getThresholdValue().toString())</span>
+<span class="fc" id="L76">                .build();</span>
+                
+<span class="fc" id="L78">        } catch (Exception e) {</span>
+<span class="fc" id="L79">            log.error(&quot;Error evaluating frequency rule {}: {}&quot;, rule.getRuleName(), e.getMessage(), e);</span>
+<span class="fc" id="L80">            return RuleEvaluationResult.builder()</span>
+<span class="fc" id="L81">                .triggered(false)</span>
+<span class="fc" id="L82">                .reason(&quot;Rule evaluation error: &quot; + e.getMessage())</span>
+<span class="fc" id="L83">                .ruleName(rule.getRuleName())</span>
+<span class="fc" id="L84">                .build();</span>
+        }
+    }
+    
+    @Override
+    public boolean supports(String ruleType) {
+<span class="fc" id="L90">        return &quot;FREQUENCY&quot;.equalsIgnoreCase(ruleType);</span>
+    }
+    
+    /**
+     * Extract time window from rule configuration
+     * Rule config should contain: {&quot;timeWindowSeconds&quot;: 3600}
+     */
+    private long getTimeWindowFromRule(FraudRule rule) {
+        try {
+<span class="fc bfc" id="L99" title="All 4 branches covered.">            if (rule.getRuleConfig() != null &amp;&amp; !rule.getRuleConfig().trim().isEmpty()) {</span>
+<span class="fc" id="L100">                Map&lt;String, Object&gt; config = objectMapper.readValue(rule.getRuleConfig(), </span>
+<span class="fc" id="L101">                    new TypeReference&lt;Map&lt;String, Object&gt;&gt;() {});</span>
+                
+<span class="fc bfc" id="L103" title="All 2 branches covered.">                if (config.containsKey(&quot;timeWindowSeconds&quot;)) {</span>
+<span class="fc" id="L104">                    Object timeWindow = config.get(&quot;timeWindowSeconds&quot;);</span>
+<span class="fc bfc" id="L105" title="All 2 branches covered.">                    if (timeWindow instanceof Number) {</span>
+<span class="fc" id="L106">                        return ((Number) timeWindow).longValue();</span>
+                    }
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">                    if (timeWindow instanceof String) {</span>
+<span class="fc" id="L109">                        return Long.parseLong((String) timeWindow);</span>
+                    }
+                }
+            }
+<span class="fc" id="L113">        } catch (Exception e) {</span>
+<span class="fc" id="L114">            log.warn(&quot;Failed to parse time window from rule config, using default: {}&quot;, e.getMessage());</span>
+<span class="fc" id="L115">        }</span>
+<span class="fc" id="L116">                    return properties.getTimeWindow().getDefaultSeconds();</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

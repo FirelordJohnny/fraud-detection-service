@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: com.faud.frauddetection.service.impl.FraudRuleServiceTest
+-------------------------------------------------------------------------------
+Tests run: 13, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.051 s -- in com.faud.frauddetection.service.impl.FraudRuleServiceTest

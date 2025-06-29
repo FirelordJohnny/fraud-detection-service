@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="zh"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MultiConditionConfig.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">fraud-detection</a> &gt; <a href="index.source.html" class="el_package">com.faud.frauddetection.dto</a> &gt; <span class="el_source">MultiConditionConfig.java</span></div><h1>MultiConditionConfig.java</h1><pre class="source lang-java linenums">package com.faud.frauddetection.dto;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+
+import java.util.List;
+
+/**
+ * Multi-condition configuration DTO - supports condition grouping
+ * Used for frontend UI generation and backend parsing of multi-condition rules
+ */
+<span class="pc bpc" id="L14" title="1 of 22 branches missed.">@Data</span>
+<span class="pc" id="L15">@Builder</span>
+<span class="fc" id="L16">@NoArgsConstructor</span>
+<span class="fc" id="L17">@AllArgsConstructor</span>
+public class MultiConditionConfig {
+    
+    /**
+     * List of condition groups
+     */
+<span class="fc" id="L23">    private List&lt;ConditionGroup&gt; conditionGroups;</span>
+    
+    /**
+     * Logical operator between condition groups
+     * Values: &quot;AND&quot; or &quot;OR&quot;
+     */
+<span class="fc" id="L29">    private String groupLogicalOperator;</span>
+    
+    /**
+     * Condition group
+     */
+<span class="pc bpc" id="L34" title="6 of 46 branches missed.">    @Data</span>
+<span class="pc" id="L35">    @Builder</span>
+<span class="fc" id="L36">    @NoArgsConstructor</span>
+<span class="fc" id="L37">    @AllArgsConstructor</span>
+    public static class ConditionGroup {
+        /**
+         * Group ID (for frontend management)
+         */
+<span class="fc" id="L42">        private String groupId;</span>
+        
+        /**
+         * Group name (optional, for display)
+         */
+<span class="fc" id="L47">        private String groupName;</span>
+        
+        /**
+         * List of conditions within the group
+         */
+<span class="fc" id="L52">        private List&lt;RuleCondition&gt; conditions;</span>
+        
+        /**
+         * Logical operator between conditions within the group
+         * Values: &quot;AND&quot; or &quot;OR&quot;
+         * Note: All conditions within the same group use the same logical operator
+         */
+<span class="fc" id="L59">        private String intraGroupOperator;</span>
+        
+        /**
+         * Group weight (optional)
+         */
+<span class="fc" id="L64">        private Double groupWeight;</span>
+    }
+    
+    /**
+     * Single rule condition
+     */
+<span class="pc bpc" id="L70" title="7 of 54 branches missed.">    @Data</span>
+<span class="pc" id="L71">    @Builder</span>
+<span class="fc" id="L72">    @NoArgsConstructor</span>
+<span class="fc" id="L73">    @AllArgsConstructor</span>
+    public static class RuleCondition {
+        /**
+         * Condition ID (for frontend management)
+         */
+<span class="fc" id="L78">        private String conditionId;</span>
+        
+        /**
+         * Field name
+         */
+<span class="fc" id="L83">        private String field;</span>
+        
+        /**
+         * Operator
+         */
+<span class="fc" id="L88">        private String operator;</span>
+        
+        /**
+         * Value
+         */
+<span class="fc" id="L93">        private String value;</span>
+        
+        /**
+         * Condition weight (optional)
+         */
+<span class="fc" id="L98">        private Double weight;</span>
+        
+        /**
+         * Condition description (optional, for UI display)
+         */
+<span class="fc" id="L103">        private String description;</span>
+    }
+} 
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
